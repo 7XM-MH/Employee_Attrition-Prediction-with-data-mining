@@ -1,3 +1,0 @@
-Projet Data Mining - Employee Attrition Prediction
-Ce fichier texte confirme la synchronisation et le bon fonctionnement du dépôt Git.
-
