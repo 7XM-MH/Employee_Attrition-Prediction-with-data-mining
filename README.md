@@ -220,3 +220,52 @@ streamlit run src/app.py
 <!-- ## 📄 License
 
 Released under the MIT License — see [`LICENSE`](LICENSE). -->
+
+---
+
+## Application web (Streamlit)
+
+- **Statut :** En cours de développement
+- **Commande de lancement :**
+  ```bash
+  streamlit run app/Home.py
+  ```
+
+### Arborescence
+
+```text
+app/
+├── Home.py
+├── utils.py
+└── pages/
+    ├── 1_Dashboard.py
+    ├── 2_Prediction.py
+    ├── 3_Performance_Modeles.py
+    ├── 4_Facteurs_Demission.py
+    └── 5_Prediction_en_lot.py
+```
+
+### Pages prévues
+
+| Page | Description / Fonctionnalités |
+|---|---|
+| **Dashboard** | KPI, graphiques, heatmap, filtres |
+| **Prédiction individuelle** | Formulaire, jauge, risque, SHAP local |
+| **Performance des modèles** | Métriques, matrice de confusion, ROC |
+| **Facteurs de démission** | Importance des variables, SHAP global, top 5 |
+| **Prédiction en lot** | Upload CSV, tableau trié par risque, export |
+
+### Pistes d'amélioration
+
+- Simulation what-if
+- Recommandations RH
+- Liste des employés à risque
+
+### Technologies
+
+- Streamlit
+- Plotly
+- scikit-learn
+- SHAP
+- pandas
+- joblib
