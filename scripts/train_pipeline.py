@@ -177,13 +177,13 @@ def main() -> None:
         "RandomForest": {
             "classifier": RandomForestClassifier(random_state=RANDOM_STATE),
             "params": {
-                "classifier__n_estimators": [50, 100, 200],
+                "classifier__n_estimators": [50, 100],
                 "classifier__max_depth": [5, 10, 15, None],
                 "classifier__min_samples_split": [2, 5],
                 "classifier__min_samples_leaf": [1, 2],
             },
             "search": "random",
-            "n_iter": 20,
+            "n_iter": 10,
         },
         "NaiveBayes": {
             "classifier": GaussianNB(),
@@ -200,7 +200,7 @@ def main() -> None:
                 "classifier__gamma": ["scale", "auto"],
             },
             "search": "random",
-            "n_iter": 15,
+            "n_iter": 6,
         },
     }
 
@@ -215,7 +215,7 @@ def main() -> None:
     feature_importances: dict = {}
     best_hyperparameters: dict = {}
     cv_results_summary: dict = {}
-    best_f1 = -1.0
+    best_cv_f1 = -1.0
     best_model_name = ""
 
     for name, cfg in model_configs.items():
@@ -234,7 +234,8 @@ def main() -> None:
             pipe.fit(X_train, y_train)
             search_obj = None
             best_hyperparameters[name] = {}
-            cv_results_summary[name] = {"mean_cv_f1": None, "std_cv_f1": None}
+            cv_results_summary[name] = {"mean_cv_f1": 0.0, "std_cv_f1": 0.0}
+            mean_cv = 0.0
         else:
             if cfg["search"] == "random":
                 search_obj = RandomizedSearchCV(
@@ -244,7 +245,7 @@ def main() -> None:
                     cv=cv,
                     scoring="f1",
                     refit=True,
-                    n_jobs=-1,
+                    n_jobs=1,
                     random_state=RANDOM_STATE,
                     return_train_score=False,
                 )
@@ -255,7 +256,7 @@ def main() -> None:
                     cv=cv,
                     scoring="f1",
                     refit=True,
-                    n_jobs=-1,
+                    n_jobs=1,
                     return_train_score=False,
                 )
 
@@ -270,8 +271,9 @@ def main() -> None:
 
             # CV results
             best_idx = search_obj.best_index_
+            mean_cv = round(float(search_obj.cv_results_["mean_test_score"][best_idx]), 4)
             cv_results_summary[name] = {
-                "mean_cv_f1": round(float(search_obj.cv_results_["mean_test_score"][best_idx]), 4),
+                "mean_cv_f1": mean_cv,
                 "std_cv_f1": round(float(search_obj.cv_results_["std_test_score"][best_idx]), 4),
             }
 
@@ -325,9 +327,9 @@ def main() -> None:
         # Save the pipeline
         dump(pipe, MODELS_DIR / f"{name}_pipeline.joblib")
 
-        # Track best model by F1
-        if f1 > best_f1:
-            best_f1 = f1
+        # Track best model by CV F1 on training set (avoids test-set selection bias)
+        if mean_cv > best_cv_f1:
+            best_cv_f1 = mean_cv
             best_model_name = name
 
         elapsed = time.time() - t0
@@ -345,7 +347,7 @@ def main() -> None:
     print("[6/6] Sauvegarde des artefacts …\n")
 
     # Best model — copy the already-saved pipeline as best_model.joblib
-    print(f"  ★ Meilleur modèle (F1 test) : {best_model_name} (F1 = {best_f1})")
+    print(f"  ★ Meilleur modèle (sélectionné par F1 CV) : {best_model_name} (CV F1 = {best_cv_f1}, Test F1 = {all_metrics[best_model_name]['f1']})")
     from joblib import load as jl_load
     best_pipe = jl_load(MODELS_DIR / f"{best_model_name}_pipeline.joblib")
     dump(best_pipe, MODELS_DIR / "best_model.joblib")

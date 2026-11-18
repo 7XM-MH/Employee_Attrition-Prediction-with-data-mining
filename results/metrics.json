@@ -1,0 +1,44 @@
+{
+  "ZeroR": {
+    "accuracy": 0.9095,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.5
+  },
+  "KNN": {
+    "accuracy": 0.897,
+    "precision": 0.1795,
+    "recall": 0.0387,
+    "f1": 0.0636,
+    "roc_auc": 0.505
+  },
+  "DecisionTree": {
+    "accuracy": 0.865,
+    "precision": 0.1496,
+    "recall": 0.105,
+    "f1": 0.1234,
+    "roc_auc": 0.5323
+  },
+  "RandomForest": {
+    "accuracy": 0.909,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.5914
+  },
+  "NaiveBayes": {
+    "accuracy": 0.9065,
+    "precision": 0.125,
+    "recall": 0.0055,
+    "f1": 0.0106,
+    "roc_auc": 0.6172
+  },
+  "SVM": {
+    "accuracy": 0.9075,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.54
+  }
+}

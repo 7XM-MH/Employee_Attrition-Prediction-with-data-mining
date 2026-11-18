@@ -1,0 +1,40 @@
+{
+  "DecisionTree": {
+    "num__MonthlyIncome": 0.22866588560615655,
+    "num__DistanceFromHome": 0.21948821628632328,
+    "num__Age": 0.13412369272468147,
+    "num__YearsAtCompany": 0.10131595751644293,
+    "num__TrainingHoursLastYear": 0.09426241761523925,
+    "num__JobSatisfaction": 0.053855335804664846,
+    "num__PerformanceRating": 0.034094699154288415,
+    "num__WorkLifeBalance": 0.031233859718871593,
+    "cat__OverTime_Yes": 0.0221218880131206,
+    "cat__Department_IT": 0.01774771468993476,
+    "cat__Department_Sales": 0.012241638744800984,
+    "num__JobLevel": 0.011265248508653715,
+    "cat__Department_HR": 0.010295798828202637,
+    "cat__PromotionLast5Years_Yes": 0.00867587111831898,
+    "cat__Department_Operations": 0.007925834267932788,
+    "cat__Department_Marketing": 0.007686902294028583,
+    "cat__Department_Finance": 0.004999039108338694
+  },
+  "RandomForest": {
+    "num__MonthlyIncome": 0.1864775328635784,
+    "num__DistanceFromHome": 0.17594351632106087,
+    "num__Age": 0.12328214015911862,
+    "num__TrainingHoursLastYear": 0.12304575293860466,
+    "num__YearsAtCompany": 0.09293917915927932,
+    "num__JobSatisfaction": 0.06020437770175047,
+    "num__PerformanceRating": 0.046590907682439786,
+    "num__WorkLifeBalance": 0.04507484636798793,
+    "num__JobLevel": 0.03118848626563785,
+    "cat__Department_Sales": 0.019301682548218884,
+    "cat__OverTime_Yes": 0.017433885145447282,
+    "cat__Department_Operations": 0.015527125502908657,
+    "cat__Department_Marketing": 0.014654587406263941,
+    "cat__Department_IT": 0.013912973832288695,
+    "cat__Department_Finance": 0.012991182654863013,
+    "cat__PromotionLast5Years_Yes": 0.012466035108906235,
+    "cat__Department_HR": 0.008965788341645409
+  }
+}

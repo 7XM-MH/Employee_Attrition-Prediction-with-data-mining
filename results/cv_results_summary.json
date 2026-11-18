@@ -1,0 +1,26 @@
+{
+  "ZeroR": {
+    "mean_cv_f1": 0.0,
+    "std_cv_f1": 0.0
+  },
+  "KNN": {
+    "mean_cv_f1": 0.071,
+    "std_cv_f1": 0.0201
+  },
+  "DecisionTree": {
+    "mean_cv_f1": 0.133,
+    "std_cv_f1": 0.0186
+  },
+  "RandomForest": {
+    "mean_cv_f1": 0.0027,
+    "std_cv_f1": 0.0054
+  },
+  "NaiveBayes": {
+    "mean_cv_f1": 0.0207,
+    "std_cv_f1": 0.0192
+  },
+  "SVM": {
+    "mean_cv_f1": 0.0027,
+    "std_cv_f1": 0.0054
+  }
+}
