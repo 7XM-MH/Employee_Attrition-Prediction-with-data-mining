@@ -105,24 +105,7 @@ section_header(
     icon="🗂️",
 )
 
-col0, col1, col2 = st.columns(3)
-
-with col0:
-    st.markdown(
-        """
-        <div class="nav-card">
-            <div>
-                <div class="nav-card-icon">🔬</div>
-                <div class="nav-card-title">0. EDA & Nettoyage</div>
-                <div class="nav-card-desc">
-                    Exploration statistique approfondie, contrôle qualité des données, nettoyage automatisé et analyses uni/bivariées interactives.
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.page_link("pages/0_EDA_Nettoyage.py", label="Explorer les Données", icon="🔬", use_container_width=True)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown(
@@ -148,7 +131,6 @@ with col2:
             <div>
                 <div class="nav-card-icon">🔮</div>
                 <div class="nav-card-title">2. Prédiction Individuelle</div>
-
                 <div class="nav-card-desc">
                     Formulaire interactif avec jauge de risque, recommandations d'action RH et simulation « What-if » en temps réel.
                 </div>
@@ -159,7 +141,7 @@ with col2:
     )
     st.page_link("pages/2_Prediction.py", label="Tester une Prédiction", icon="🔮", use_container_width=True)
 
-with col2:
+with col3:
     st.markdown(
         """
         <div class="nav-card">
