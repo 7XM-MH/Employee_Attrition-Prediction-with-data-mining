@@ -4,23 +4,23 @@
     "std_cv_f1": 0.0
   },
   "KNN": {
-    "mean_cv_f1": 0.071,
-    "std_cv_f1": 0.0201
+    "mean_cv_f1": 0.0542,
+    "std_cv_f1": 0.0272
   },
   "DecisionTree": {
-    "mean_cv_f1": 0.133,
-    "std_cv_f1": 0.0186
+    "mean_cv_f1": 0.1365,
+    "std_cv_f1": 0.023
   },
   "RandomForest": {
-    "mean_cv_f1": 0.0027,
-    "std_cv_f1": 0.0054
+    "mean_cv_f1": 0.0055,
+    "std_cv_f1": 0.0067
   },
   "NaiveBayes": {
-    "mean_cv_f1": 0.0207,
-    "std_cv_f1": 0.0192
+    "mean_cv_f1": 0.0833,
+    "std_cv_f1": 0.0263
   },
   "SVM": {
     "mean_cv_f1": 0.0027,
-    "std_cv_f1": 0.0054
+    "std_cv_f1": 0.0055
   }
 }

@@ -1,7 +1,7 @@
 {
   "ZeroR": {},
   "KNN": {
-    "metric": "manhattan",
+    "metric": "euclidean",
     "n_neighbors": 3,
     "weights": "uniform"
   },
@@ -12,7 +12,7 @@
     "min_samples_split": 10
   },
   "RandomForest": {
-    "n_estimators": 50,
+    "n_estimators": 100,
     "min_samples_split": 2,
     "min_samples_leaf": 1,
     "max_depth": null

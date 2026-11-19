@@ -1,0 +1,113 @@
+{
+  "dataset": {
+    "rows": 10000,
+    "input_features": 12,
+    "encoded_features": 20,
+    "excluded_columns": [
+      "EmployeeID",
+      "Attrition"
+    ]
+  },
+  "preprocessing": {
+    "numerical": "StandardScaler",
+    "categorical": "OneHotEncoder(handle_unknown='ignore')",
+    "target_used_for_fitting": false
+  },
+  "models": [
+    "KMeans",
+    "PCA",
+    "AgglomerativeClustering",
+    "DBSCAN"
+  ],
+  "PCA": {
+    "n_components": 2,
+    "total_explained_variance": 0.4058,
+    "components": [
+      {
+        "component": 1,
+        "explained_variance_ratio": 0.3068,
+        "top_features": [
+          {
+            "feature": "num__MonthlyIncome",
+            "loading": 0.5285
+          },
+          {
+            "feature": "num__YearsAtCompany",
+            "loading": 0.5226
+          },
+          {
+            "feature": "num__JobLevel",
+            "loading": 0.5211
+          }
+        ]
+      },
+      {
+        "component": 2,
+        "explained_variance_ratio": 0.099,
+        "top_features": [
+          {
+            "feature": "num__JobSatisfaction",
+            "loading": 0.6908
+          },
+          {
+            "feature": "num__DistanceFromHome",
+            "loading": 0.5617
+          },
+          {
+            "feature": "num__WorkLifeBalance",
+            "loading": -0.4084
+          }
+        ]
+      }
+    ]
+  },
+  "KMeans": {
+    "n_clusters": 4,
+    "cluster_sizes": {
+      "0": 1284,
+      "1": 2074,
+      "2": 3284,
+      "3": 3358
+    },
+    "silhouette": 0.1051,
+    "attrition_rate_by_cluster": {
+      "0": 0.0857,
+      "1": 0.0579,
+      "2": 0.109,
+      "3": 0.0938
+    },
+    "inertia": 72372.7
+  },
+  "AgglomerativeClustering": {
+    "n_clusters": 4,
+    "cluster_sizes": {
+      "0": 4245,
+      "1": 3118,
+      "2": 1786,
+      "3": 851
+    },
+    "silhouette": 0.0732,
+    "attrition_rate_by_cluster": {
+      "0": 0.106,
+      "1": 0.0924,
+      "2": 0.0627,
+      "3": 0.0623
+    }
+  },
+  "DBSCAN": {
+    "n_clusters": 2,
+    "cluster_sizes": {
+      "0": 8566,
+      "1": 40
+    },
+    "silhouette": 0.2675,
+    "n_noise": 1394,
+    "attrition_rate_by_cluster": {
+      "0": 0.0909,
+      "1": 0.05
+    },
+    "eps": 0.18,
+    "min_samples": 25
+  },
+  "interpretation_note": "Les taux d'attrition par cluster sont calculés après coup uniquement pour interpréter les groupes ; ils n'interviennent jamais dans l'ajustement."
+}

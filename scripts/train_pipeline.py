@@ -284,7 +284,7 @@ def compute_feature_importances(
         scoring="f1",
         n_repeats=3,
         random_state=RANDOM_STATE,
-        n_jobs=-1,
+        n_jobs=1,  # n_jobs=1 pour compatibilité Windows (évite TerminatedWorkerError)
     )
     ranked = sorted(
         zip(ALL_FEATURES, result.importances_mean), key=lambda item: item[1], reverse=True
@@ -361,7 +361,7 @@ def main() -> None:
 
         if cfg["search"] is None:
             # Zero-R : pas d'hyperparamètre, mais un score CV réel (pas un score nul).
-            cv_scores = cross_val_score(pipe, X_train, y_train, cv=cv, scoring="f1", n_jobs=-1)
+            cv_scores = cross_val_score(pipe, X_train, y_train, cv=cv, scoring="f1", n_jobs=1)  # n_jobs=1 Windows compat
             mean_cv_f1 = float(cv_scores.mean())
             std_cv_f1 = float(cv_scores.std())
             pipe.fit(X_train, y_train)
@@ -373,7 +373,7 @@ def main() -> None:
                 cv=cv,
                 scoring="f1",  # F1 de la classe positive Yes (encodée 1)
                 refit=True,
-                n_jobs=-1,
+                n_jobs=1,  # n_jobs=1 pour compatibilité Windows (évite TerminatedWorkerError)
                 return_train_score=False,
             )
             if cfg["search"] == "random":
