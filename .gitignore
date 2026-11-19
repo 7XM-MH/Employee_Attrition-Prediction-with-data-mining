@@ -41,3 +41,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Project roadmap & analysis (kept local only)
+PROJECT_ANALYSIS_AND_ROADMAP.md
