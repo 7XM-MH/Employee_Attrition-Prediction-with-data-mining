@@ -1,5 +1,6 @@
-"""Unit tests for preprocessing and data cleaning routines."""
+"""Unit tests for preprocessing and data preparation routines."""
 import pytest
+import numpy as np
 import pandas as pd
 from pathlib import Path
 import sys
@@ -7,8 +8,17 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.preprocessing import load_raw_data, prepare_data, ALL_FEATURES
-from app.cleaning import clean_data, detect_outliers_iqr, _NUMERICAL
+from src.preprocessing import (
+    load_raw_data,
+    prepare_data,
+    ALL_FEATURES,
+    NUMERICAL_FEATURES,
+    CATEGORICAL_FEATURES,
+    TARGET,
+    ID_COL,
+)
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 
 def test_prepare_data_contract():
@@ -17,24 +27,33 @@ def test_prepare_data_contract():
     X, y = prepare_data(df)
     assert len(X) == len(df)
     assert list(X.columns) == ALL_FEATURES
-    assert "EmployeeID" not in X.columns
-    assert "Attrition" not in X.columns
+    assert ID_COL not in X.columns
+    assert TARGET not in X.columns
     assert set(y.unique()).issubset({0, 1})
 
 
-def test_clean_data_pipeline():
-    """Verify clean_data executes outlier capping without dropping rows."""
-    df = load_raw_data()
-    cleaned_df, report = clean_data(df)
-    assert len(cleaned_df) == len(df)
-    assert "EmployeeID" not in cleaned_df.columns
-    assert "total_outliers_capped" in report
+def test_feature_definitions():
+    """Verify feature partitions match expected counts."""
+    assert len(NUMERICAL_FEATURES) == 9
+    assert len(CATEGORICAL_FEATURES) == 3
+    assert len(ALL_FEATURES) == 12
+    assert set(ALL_FEATURES) == set(NUMERICAL_FEATURES + CATEGORICAL_FEATURES)
 
 
-def test_outlier_detection_iqr():
-    """Verify IQR calculation yields expected lower/upper bounds."""
-    df = load_raw_data()
-    outliers_df = detect_outliers_iqr(df, _NUMERICAL)
-    assert len(outliers_df) == len(_NUMERICAL)
-    assert "Variable" in outliers_df.columns
-    assert "IQR" in outliers_df.columns
+def test_preprocessor_transformation():
+    """Verify ColumnTransformer transforms features to valid numeric matrix."""
+    df = load_raw_data().head(50)
+    X, y = prepare_data(df)
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), NUMERICAL_FEATURES),
+            ("cat", OneHotEncoder(drop="first", handle_unknown="ignore", sparse_output=False), CATEGORICAL_FEATURES),
+        ],
+        remainder="drop",
+    )
+    
+    transformed = preprocessor.fit_transform(X)
+    assert transformed.shape[0] == len(df)
+    assert transformed.shape[1] >= len(ALL_FEATURES)
+    assert np.isfinite(transformed).all()

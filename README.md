@@ -246,10 +246,8 @@ L'application utilise un **thème indigo professionnel** (`#4F46E5`) avec :
 app/
 ├── Home.py                    # Page d'accueil avec KPI globaux et navigation
 ├── utils.py                   # Composants UI, chargement données/modèles
-├── cleaning.py                # Fonction clean_data(df) réutilisable
 ├── style.css                  # Feuille de styles CSS personnalisée
 └── pages/
-    ├── 0_EDA_Nettoyage.py     # 🔬 EDA & Nettoyage (7 onglets)
     ├── 1_Dashboard.py         # 📊 Dashboard analytique interactif
     ├── 2_Prediction.py        # 🔮 Prédiction individuelle + What-If + SHAP
     ├── 3_Performance_Modeles.py # 🏆 Benchmark 6 modèles
@@ -262,7 +260,6 @@ app/
 
 | Page | Description / Fonctionnalités |
 |---|---|
-| **0. EDA & Nettoyage** | Aperçu dataset, qualité des données (NaN, doublons, outliers IQR), pipeline de nettoyage avec comparaison avant/après, analyses uni et bivariées, heatmap de corrélations, déséquilibre de classes, export CSV nettoyé |
 | **1. Dashboard** | KPI, distributions, corrélations, filtres globaux (département, âge, revenus, overtime) |
 | **2. Prédiction individuelle** | Formulaire interactif, jauge de risque, recommandations RH ciblées, simulation What-If, explications SHAP locales |
 | **3. Performance des modèles** | Métriques (Accuracy, F1, ROC-AUC, MCC), matrices de confusion, courbes ROC comparatives |
@@ -270,17 +267,16 @@ app/
 | **5. Prédiction en lot** | Upload CSV multi-employés, tableau trié par risque, export Excel/CSV |
 | **6. À Propos** | Pipeline Data Mining, dictionnaire des données, mentions éthiques |
 
-### Page EDA & Nettoyage — Détail des 7 onglets
+---
 
-| Onglet | Contenu |
+## 📓 Notebooks Jupyter
+
+L'analyse exploratoire (EDA), le nettoyage des données et les tests d'hypothèses statistiques sont menés dans les notebooks dédiés :
+
+| Notebook | Description / Contenu |
 |---|---|
-| **📋 Aperçu** | Dimensions, types de colonnes, premières lignes, statistiques descriptives |
-| **🔍 Qualité** | Valeurs manquantes (tableau + graphique), doublons, colonnes constantes, outliers IQR + boxplots |
-| **🧹 Nettoyage** | Étapes appliquées, comparaison avant/après (lignes, colonnes, NaN), détail des valeurs écrêtées |
-| **📊 Univariée** | Histogrammes (numériques) + boxplot marginal, barres (catégorielles) + statistiques (moyenne, skewness…) |
-| **🔗 Bivariée** | Boxplots numériques × Attrition + t-test de Welch, barres empilées catégorielles + χ² avec p-valeurs |
-| **🌡️ Corrélations** | Heatmap interactive (Pearson), top corrélations avec Attrition, graphique déséquilibre de classes (donut) |
-| **📥 Export** | Résumé du nettoyage, aperçu, bouton de téléchargement CSV nettoyé |
+| [`01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) | **EDA & Nettoyage :** audit qualité (NaN, doublons, constantes), détection et écrêtage des outliers (IQR × 1.5), pipeline de nettoyage avec comparaison avant/après, analyse univariée (distributions & formes), bivariée (boxplots, barres empilées), heatmap de corrélations, analyse du déséquilibre de classes et export |
+| [`02_statistical_analysis.ipynb`](notebooks/02_statistical_analysis.ipynb) | **Tests d'hypothèses statistiques :** H1 (OverTime ⟂ Attrition, χ²), H2 (MonthlyIncome × Attrition, Mann-Whitney U), H3 (WorkLifeBalance ⟂ Attrition, χ²), H4 (Age vs YearsAtCompany, Spearman), correction Benjamini-Hochberg FDR, tailles d'effet (Cramér's V, Cohen's d), ANOVA |
 
 ### Technologies
 
@@ -289,5 +285,5 @@ app/
 - scikit-learn
 - SHAP
 - pandas / numpy
-- scipy (tests statistiques)
+- scipy / statsmodels
 - joblib
