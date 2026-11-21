@@ -42,5 +42,18 @@ htmlcov/
 Thumbs.db
 desktop.ini
 
+# Generated model artifacts (rebuild with python scripts/train_pipeline.py)
+models/*.joblib
+!models/.gitkeep
+
+# Generated evaluation / analysis results
+results/*.json
+!results/.gitkeep
+
+# Generated processed datasets
+data/processed/*
+!data/processed/.gitkeep
+
+
 # Project roadmap & analysis (kept local only)
 PROJECT_ANALYSIS_AND_ROADMAP.md
