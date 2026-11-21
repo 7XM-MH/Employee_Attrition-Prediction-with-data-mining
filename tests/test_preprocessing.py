@@ -57,3 +57,29 @@ def test_preprocessor_transformation():
     assert transformed.shape[0] == len(df)
     assert transformed.shape[1] >= len(ALL_FEATURES)
     assert np.isfinite(transformed).all()
+
+
+def test_target_mapping_is_no_zero_yes_one():
+    """La cible suit exactement le contrat No -> 0 et Yes -> 1."""
+    df = load_raw_data().head(50)
+    _, y = prepare_data(df)
+    expected = df[TARGET].map({"No": 0, "Yes": 1})
+    assert y.tolist() == expected.tolist()
+    assert set(y.unique()).issubset({0, 1})
+
+
+def test_prepare_data_does_not_mutate_input():
+    """prepare_data travaille sur une copie et n'ajoute aucune colonne."""
+    df = load_raw_data().head(5)
+    original = df.copy()
+    X, y = prepare_data(df)
+    pd.testing.assert_frame_equal(df, original)
+    assert ID_COL not in X.columns
+    assert TARGET not in X.columns
+    assert len(y) == len(df)
+
+
+def test_feature_names_are_unique():
+    assert len(ALL_FEATURES) == 12
+    assert len(set(ALL_FEATURES)) == 12
+    assert set(ALL_FEATURES) == set(NUMERICAL_FEATURES + CATEGORICAL_FEATURES)
