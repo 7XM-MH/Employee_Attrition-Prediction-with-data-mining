@@ -12,6 +12,14 @@ from src.preprocessing import ALL_FEATURES, load_raw_data
 
 MODELS_DIR = PROJECT_ROOT / "models"
 
+# Les modèles sont des artefacts générés (voir .gitignore). Les tests ne doivent
+# échouer que si l'utilisateur a oublié de lancer l'entraînement, pas à cause
+# d'un checkout propre sans .joblib versionné.
+pytestmark = pytest.mark.skipif(
+    not (MODELS_DIR / "best_model.joblib").exists(),
+    reason="Artefacts absents : lancez python scripts/train_pipeline.py",
+)
+
 
 def test_saved_models_exist():
     """Verify that best_model and individual pipelines are serialized."""
