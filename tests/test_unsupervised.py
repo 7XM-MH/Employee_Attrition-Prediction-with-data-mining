@@ -107,3 +107,22 @@ def test_analysis_summary_is_json_serialisable():
     assert set(summary["models"]) == set(UNSUPERVISED_MODELS)
     for labels in details["labels"].values():
         assert len(labels) == 12
+
+
+def test_analysis_is_deterministic():
+    """Les quatre modèles sont reproductibles avec random_state=42."""
+    df = _sample_data()
+    first, _ = analyse_unsupervised(df, n_clusters=2, eps=1.0, min_samples=2)
+    second, _ = analyse_unsupervised(df, n_clusters=2, eps=1.0, min_samples=2)
+    assert first == second
+
+
+def test_dbscan_reports_only_noise_when_no_density():
+    """Un eps trop petit doit être signalé comme bruit, pas comme un cluster."""
+    summary, details = analyse_unsupervised(
+        _sample_data(), n_clusters=2, eps=0.01, min_samples=50
+    )
+    dbscan = summary["DBSCAN"]
+    assert dbscan["n_clusters"] == 0
+    assert dbscan["n_noise"] == 12
+    assert set(np.unique(details["labels"]["DBSCAN"])) == {-1}

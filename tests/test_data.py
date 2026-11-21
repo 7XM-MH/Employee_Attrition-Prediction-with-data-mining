@@ -1,5 +1,6 @@
 """Unit tests for dataset integrity and validation."""
 import pytest
+import numpy as np
 import pandas as pd
 from pathlib import Path
 import sys
@@ -39,3 +40,26 @@ def test_target_distribution():
     # Class imbalance: positive class Yes should be ~9%
     attrition_rate = counts["Yes"] / len(df)
     assert 0.05 <= attrition_rate <= 0.15, f"Unexpected attrition rate {attrition_rate}"
+
+
+def test_employee_ids_are_unique():
+    """EmployeeID identifie chaque employé de manière unique."""
+    df = pd.read_csv(DATA_PATH)
+    assert df[ID_COL].notna().all()
+    assert df[ID_COL].is_unique
+
+
+def test_numeric_features_are_finite():
+    """Les 9 features numériques sont convertibles et sans valeur infinie."""
+    df = pd.read_csv(DATA_PATH)
+    values = df[NUMERICAL_FEATURES].to_numpy(dtype=float)
+    assert np.isfinite(values).all()
+
+
+def test_categorical_modalities_are_valid():
+    """Les modalités catégorielles restent dans les valeurs attendues."""
+    df = pd.read_csv(DATA_PATH)
+    assert set(df[TARGET].unique()) <= {"No", "Yes"}
+    assert set(df["OverTime"].unique()) <= {"Yes", "No"}
+    assert set(df["PromotionLast5Years"].unique()) <= {"Yes", "No"}
+    assert df["Department"].nunique() > 1
