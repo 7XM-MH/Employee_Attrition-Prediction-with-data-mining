@@ -20,6 +20,7 @@ st.set_page_config(
 from app.utils import (
     load_css,
     load_model,
+    get_plotly_template,
     kpi_card,
     risk_badge,
     section_header,
@@ -41,6 +42,7 @@ load_css()
 
 # Render shared sidebar
 render_sidebar(df=None, show_filters=False)
+PLOTLY_TEMPLATE = get_plotly_template()
 
 # ── Header ─────────────────────────────────────────────────────────────
 section_header(

@@ -22,6 +22,7 @@ from app.utils import (
     load_data,
     load_model,
     load_json,
+    get_plotly_template,
     kpi_card,
     section_header,
     render_sidebar,
@@ -45,6 +46,7 @@ load_css()
 
 # Render shared sidebar
 render_sidebar(df=None, show_filters=False)
+PLOTLY_TEMPLATE = get_plotly_template()
 
 # ── Header ─────────────────────────────────────────────────────────────
 section_header(
@@ -63,14 +65,15 @@ def display_name(key: str) -> str:
     return MODEL_NAMES.get(key, key)
 
 
-tab_imp, tab_shap, tab_insights = st.tabs([
-    "📊 Importance des Variables (Modèles Arborescents)",
-    "🔬 Décomposition Globale SHAP",
-    "💡 Synthèse & Leviers d'Action RH",
-])
+selected_section = st.radio(
+    "Section d'analyse",
+    ["Importance des variables", "Analyse SHAP", "Leviers d'action RH"],
+    horizontal=True,
+    label_visibility="collapsed",
+)
 
 # ── Tab 1: Feature Importances ─────────────────────────────────────────
-with tab_imp:
+if selected_section == "Importance des variables":
     st.markdown("#### 🌲 Importance intrinsèque des caractéristiques (Gini / Impureté)")
     st.caption("Calculée à partir des arbres de décision et forêts aléatoires entraînés sur le jeu de données.")
 
@@ -145,7 +148,7 @@ with tab_imp:
         )
 
 # ── Tab 2: SHAP Analysis ───────────────────────────────────────────────
-with tab2:
+if selected_section == "Analyse SHAP":
     st.markdown("#### 🔬 Explicabilité Globale par Valeurs de Shapley (SHAP)")
     st.caption("Mesure la contribution marginale de chaque modalité à la probabilité de départ.")
 
@@ -156,35 +159,43 @@ with tab2:
     elif df is None:
         show_missing_artifact_warning("Données (data/raw/Employee_Attrition_DataSet.csv)")
     else:
-        try:
-            import shap
-            import matplotlib.pyplot as plt
-
-            n_sample = min(120, len(df))
-            sample_df = df.sample(n=n_sample, random_state=42)
-            X_sample = sample_df[ALL_FEATURES]
-
-            pipeline = model
-            preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
-            classifier = pipeline.steps[-1][1]
-
-            X_trans = preprocessor.transform(X_sample)
+        if st.button("Calculer les valeurs SHAP", key="calculate_global_shap"):
             try:
-                feat_names = list(preprocessor.get_feature_names_out())
-            except Exception:
-                feat_names = None
+                import shap
 
-            classes = list(getattr(classifier, "classes_", [0, 1]))
-            yes_idx = classes.index("Yes") if "Yes" in classes else (classes.index(1) if 1 in classes else 1)
+                n_sample = min(120, len(df))
+                sample_df = df.sample(n=n_sample, random_state=42)
+                X_sample = sample_df[ALL_FEATURES]
 
-            with st.spinner("⏳ Évaluation des valeurs SHAP sur un échantillon représentatif..."):
-                explainer = shap.Explainer(classifier, feature_names=feat_names)
-                shap_values = explainer(X_trans)
+                pipeline = model
+                preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
+                classifier = pipeline.steps[-1][1]
 
-                if len(shap_values.shape) == 3:
-                    shap_display = shap_values[:, :, yes_idx]
-                else:
-                    shap_display = shap_values
+                X_trans = preprocessor.transform(X_sample)
+                try:
+                    feat_names = list(preprocessor.get_feature_names_out())
+                except Exception:
+                    feat_names = None
+
+                classes = list(getattr(classifier, "classes_", [0, 1]))
+                yes_idx = classes.index("Yes") if "Yes" in classes else (classes.index(1) if 1 in classes else 1)
+
+                with st.spinner("⏳ Évaluation des valeurs SHAP sur un échantillon représentatif..."):
+                    explainer = shap.Explainer(classifier, feature_names=feat_names)
+                    shap_values = explainer(X_trans)
+                    st.session_state.global_shap_display = (
+                        shap_values[:, :, yes_idx] if len(shap_values.shape) == 3 else shap_values
+                    )
+            except ImportError:
+                st.info("ℹ️ La bibliothèque `shap` n'est pas installée (`pip install shap`) pour afficher les graphiques de Shapley.")
+            except Exception as e:
+                st.info(f"ℹ️ Le calcul des valeurs SHAP n'a pas pu aboutir pour cet algorithme : {e}")
+
+        shap_display = st.session_state.get("global_shap_display")
+        if shap_display is None:
+            st.caption("Le calcul SHAP est lancé uniquement à la demande.")
+        else:
+            import matplotlib.pyplot as plt
 
             c_s1, c_s2 = st.columns(2)
             with c_s1:
@@ -205,13 +216,8 @@ with tab2:
                 st.pyplot(fig_bar_s)
                 plt.close(fig_bar_s)
 
-        except ImportError:
-            st.info("ℹ️ La bibliothèque `shap` n'est pas installée (`pip install shap`) pour afficher les graphiques de Shapley.")
-        except Exception as e:
-            st.info(f"ℹ️ Le calcul des valeurs SHAP n'a pas pu aboutir pour cet algorithme : {e}")
-
 # ── Tab 3: Actionable HR Insights ──────────────────────────────────────
-with tab3:
+if selected_section == "Leviers d'action RH":
     st.markdown("#### 💡 Synthèse Stratégique & Leviers RH Actionnables")
     
     st.markdown(

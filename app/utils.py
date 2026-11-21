@@ -60,12 +60,76 @@ MODEL_NAMES = {
 DEPARTMENT_LIST = ["Sales", "Engineering", "Operations", "Marketing", "Finance", "IT", "HR"]
 
 
+def get_plotly_template() -> str:
+    """Return a Plotly template that matches the current app theme."""
+    return "plotly_dark" if st.session_state.get("dark_mode", False) else PLOTLY_TEMPLATE
+
+
 # ── CSS Loading ────────────────────────────────────────────────────────
 def load_css() -> None:
     """Load custom CSS from app/style.css and inject into Streamlit."""
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             css = f.read()
+        if st.session_state.get("dark_mode", False):
+            css += """
+            :root {
+                color-scheme: dark;
+                --primary-light: #312E81;
+                --bg-card: #1E293B;
+                --border-color: #334155;
+                --text-main: #F8FAFC;
+                --text-muted: #CBD5E1;
+                --risk-low-bg: rgba(6, 78, 59, 0.4);
+                --risk-low-text: #6EE7B7;
+                --risk-low-border: #059669;
+                --risk-med-bg: rgba(120, 53, 15, 0.4);
+                --risk-med-text: #FCD34D;
+                --risk-med-border: #D97706;
+                --risk-high-bg: rgba(127, 29, 29, 0.4);
+                --risk-high-text: #FCA5A5;
+                --risk-high-border: #DC2626;
+                --background-color: #0E1117;
+                --secondary-background-color: #1E293B;
+                --text-color: #F8FAFC;
+            }
+            html, body, .stApp, [data-testid="stAppViewContainer"],
+            [data-testid="stHeader"], [data-testid="stSidebar"] {
+                background-color: #0E1117 !important;
+                color: #F8FAFC;
+            }
+            [data-testid="stSidebar"] {
+                background-color: #111827 !important;
+            }
+            [data-testid="stMarkdownContainer"] p,
+            [data-testid="stMarkdownContainer"] li,
+            [data-testid="stWidgetLabel"] p,
+            [data-testid="stCaptionContainer"] {
+                color: #E2E8F0;
+            }
+            [data-testid="stMarkdownContainer"] h1,
+            [data-testid="stMarkdownContainer"] h2,
+            [data-testid="stMarkdownContainer"] h3,
+            [data-testid="stMarkdownContainer"] h4 {
+                color: #F8FAFC !important;
+            }
+            div[style*="background: white"],
+            div[style*="background:white"],
+            div[style*="background-color: white"] {
+                background: #1E293B !important;
+                color: #F8FAFC !important;
+                border-color: #334155 !important;
+            }
+            input, textarea, [data-baseweb="select"] > div,
+            [data-baseweb="popover"], [data-baseweb="menu"] {
+                background-color: #1E293B !important;
+                color: #F8FAFC !important;
+                border-color: #475569 !important;
+            }
+            [data-testid="stDataFrame"], [data-testid="stTable"] {
+                background-color: #1E293B;
+            }
+            """
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     else:
         st.markdown("""
@@ -330,6 +394,12 @@ def render_sidebar(df: Optional[pd.DataFrame] = None, show_filters: bool = True)
         </div>
         """,
         unsafe_allow_html=True,
+    )
+
+    st.sidebar.checkbox(
+        "Mode sombre",
+        key="dark_mode",
+        help="Activer ou désactiver le thème sombre de l'application",
     )
 
     filtered_df = df.copy() if df is not None else None
