@@ -20,6 +20,7 @@ st.set_page_config(
 from app.utils import (
     load_css,
     load_json,
+    get_plotly_template,
     kpi_card,
     section_header,
     render_sidebar,
@@ -39,6 +40,7 @@ load_css()
 
 # Render shared sidebar
 render_sidebar(df=None, show_filters=False)
+PLOTLY_TEMPLATE = get_plotly_template()
 
 # ── Header ─────────────────────────────────────────────────────────────
 section_header(
@@ -111,15 +113,14 @@ else:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Section 2: Metrics Table & Bar Chart ──────────────────────────
-    tab_comp, tab_roc, tab_cm, tab_cv, tab_params = st.tabs([
-        "📊 Comparaison des Métriques",
-        "📈 Courbes ROC & AUC",
-        "🔲 Matrices de Confusion",
-        "🔄 Validation Croisée (5-Fold)",
-        "⚙️ Hyperparamètres Optimaux",
-    ])
+    selected_section = st.radio(
+        "Section de performance",
+        ["Métriques", "Courbes ROC", "Matrices de confusion", "Validation croisée", "Hyperparamètres"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
 
-    with tab_comp:
+    if selected_section == "Métriques":
         st.markdown("##### Tableau comparatif complet")
         metric_cols = ["Accuracy", "Precision", "Recall", "F1-Score", "AUC-ROC"]
         styled = metrics_df[["Modèle"] + metric_cols].style.format(
@@ -149,7 +150,7 @@ else:
         fig_bar.update_layout(yaxis_range=[0, 1.05], legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    with tab_roc:
+    if selected_section == "Courbes ROC":
         st.markdown("##### Courbes ROC (Receiver Operating Characteristic)")
         if roc_data is not None:
             fig_roc = go.Figure()
@@ -191,7 +192,7 @@ else:
         else:
             show_missing_artifact_warning("roc_data.json")
 
-    with tab_cm:
+    if selected_section == "Matrices de confusion":
         st.markdown("##### Matrices de Confusion sur le Jeu de Test")
         if confusion_matrices is not None:
             selected_m = st.selectbox(
@@ -231,7 +232,7 @@ else:
         else:
             show_missing_artifact_warning("confusion_matrices.json")
 
-    with tab_cv:
+    if selected_section == "Validation croisée":
         st.markdown("##### Stabilité par Validation Croisée Stratifiée (5-Fold)")
         if cv_results is not None:
             cv_rows = []
@@ -248,7 +249,7 @@ else:
         else:
             show_missing_artifact_warning("cv_results_summary.json")
 
-    with tab_params:
+    if selected_section == "Hyperparamètres":
         st.markdown("##### Hyperparamètres Optimaux Retenus (GridSearch / RandomSearch)")
         if best_hyperparams is not None:
             param_rows = []

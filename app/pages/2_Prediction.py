@@ -176,8 +176,13 @@ with col_form:
 # ── Prediction Logic ──────────────────────────────────────────────────
 with col_result:
     model = load_model("best_model")
+    yes_idx = None
+    if model is not None:
+        classes = list(model.classes_)
+        yes_idx = classes.index("Yes") if "Yes" in classes else 1
 
     if submitted:
+        st.session_state.pop("last_shap_values", None)
         if model is None:
             show_missing_artifact_warning(
                 "Modèle entraîné (best_model.joblib)",
@@ -206,8 +211,6 @@ with col_result:
                 try:
                     pred_class = model.predict(input_data)[0]
                     probas = model.predict_proba(input_data)[0]
-                    classes = list(model.classes_)
-                    yes_idx = classes.index("Yes") if "Yes" in classes else 1
                     proba_val = float(probas[yes_idx])
 
                     st.session_state.last_prediction = {
@@ -331,27 +334,36 @@ with col_result:
         # ── SHAP Explanation ──────────────────────────────────────────
         st.markdown("---")
         with st.expander("🔬 Analyse Explicative SHAP (Feature Contributions)", expanded=False):
-            try:
+            if st.button("Générer l'explication SHAP", key="calculate_individual_shap"):
+                try:
+                    import shap
+
+                    pipeline = model
+                    preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
+                    classifier = pipeline.steps[-1][1]
+
+                    X_trans = preprocessor.transform(inp)
+                    try:
+                        feat_names = preprocessor.get_feature_names_out()
+                    except Exception:
+                        feat_names = None
+
+                    explainer = shap.Explainer(classifier, feature_names=feat_names)
+                    shap_vals = explainer(X_trans)
+                    st.session_state.last_shap_values = (
+                        shap_vals[:, :, yes_idx] if len(shap_vals.shape) == 3 else shap_vals
+                    )
+                except ImportError:
+                    st.info("ℹ️ Le module **SHAP** n'est pas installé (`pip install shap`) pour afficher la décomposition graphique.")
+                except Exception as e:
+                    st.info(f"ℹ️ L'explication SHAP détaillée n'est pas disponible pour ce type d'estimateur ({e}).")
+
+            shap_disp = st.session_state.get("last_shap_values")
+            if shap_disp is None:
+                st.caption("Le calcul SHAP est lancé uniquement à la demande.")
+            else:
                 import shap
                 import matplotlib.pyplot as plt
-
-                pipeline = model
-                preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
-                classifier = pipeline.steps[-1][1]
-
-                X_trans = preprocessor.transform(inp)
-                try:
-                    feat_names = preprocessor.get_feature_names_out()
-                except Exception:
-                    feat_names = None
-
-                explainer = shap.Explainer(classifier, feature_names=feat_names)
-                shap_vals = explainer(X_trans)
-
-                if len(shap_vals.shape) == 3:
-                    shap_disp = shap_vals[:, :, yes_idx]
-                else:
-                    shap_disp = shap_vals
 
                 fig_shap, ax = plt.subplots(figsize=(9, 5))
                 shap.plots.waterfall(shap_disp[0], max_display=10, show=False)
@@ -359,10 +371,6 @@ with col_result:
                 plt.tight_layout()
                 st.pyplot(fig_shap)
                 plt.close(fig_shap)
-            except ImportError:
-                st.info("ℹ️ Le module **SHAP** n'est pas installé (`pip install shap`) pour afficher la décomposition graphique.")
-            except Exception as e:
-                st.info(f"ℹ️ L'explication SHAP détaillée n'est pas disponible pour ce type d'estimateur ({e}).")
 
     else:
         st.markdown("#### 📊 Diagnostic Prédictif")

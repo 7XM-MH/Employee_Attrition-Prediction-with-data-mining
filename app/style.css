@@ -21,27 +21,6 @@
   --risk-high-border: #FECACA;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-card: rgba(30, 41, 59, 0.7);
-    --border-color: #334155;
-    --text-main: #F8FAFC;
-    --text-muted: #94A3B8;
-    
-    --risk-low-bg: rgba(6, 78, 59, 0.4);
-    --risk-low-text: #6EE7B7;
-    --risk-low-border: #059669;
-    
-    --risk-med-bg: rgba(120, 53, 15, 0.4);
-    --risk-med-text: #FCD34D;
-    --risk-med-border: #D97706;
-    
-    --risk-high-bg: rgba(127, 29, 29, 0.4);
-    --risk-high-text: #FCA5A5;
-    --risk-high-border: #DC2626;
-  }
-}
-
 /* ── Cartes KPI personnalisées et Streamlit native st.metric ──────── */
 .kpi-card {
   background-color: var(--bg-card);
@@ -302,4 +281,3 @@ button[kind="secondary"] {
   overflow: hidden;
   border: 1px solid var(--border-color);
 }
-

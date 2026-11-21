@@ -24,7 +24,7 @@ This repository implements an end-to-end Data Mining pipeline:
 3. Exploratory Data Analysis (EDA) and statistical hypothesis testing (χ², Mann-Whitney U, Spearman, …).
 4. Supervised classification benchmark: **Zero-R, K-NN, Decision Tree / Random Forest, Naïve Bayes, SVM**.
 5. Hyperparameter optimisation with `GridSearchCV` / `RandomizedSearchCV` (Stratified K-Fold, K ≥ 5).
-6. Interactive **Streamlit** web app (EDA dashboard + real-time prediction).
+6. Interactive **Streamlit** web app with a selectable light/dark theme (EDA dashboard + real-time prediction).
 7. Scientific report (PDF) in `docs/`.
 
 > 🤖 **ML vs LLM policy:** only classical ML algorithms are used for prediction. No Deep Learning / LLM is used as a predictive model.

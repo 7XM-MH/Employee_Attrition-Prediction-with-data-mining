@@ -20,6 +20,7 @@ st.set_page_config(
 from app.utils import (
     load_css,
     load_data,
+    get_plotly_template,
     kpi_card,
     section_header,
     render_sidebar,
@@ -55,6 +56,7 @@ if raw_df is None:
 
 # Render sidebar with active filters synced in session_state
 filtered = render_sidebar(df=raw_df, show_filters=True)
+PLOTLY_TEMPLATE = get_plotly_template()
 
 # ── Header & KPI summary ───────────────────────────────────────────────
 section_header(
@@ -112,17 +114,15 @@ if total_filtered == 0:
     st.stop()
 
 # ── Tabs ───────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "📈 Distributions Numériques",
-    "📊 Facteurs Catégoriels",
-    "🔗 Corrélations",
-    "📉 Taux d'Attrition Croisés",
-    "📋 Statistiques Détaillées",
-    "🔍 Données Filtrées",
-])
+selected_section = st.radio(
+    "Section d'analyse",
+    ["Distributions", "Facteurs catégoriels", "Corrélations", "Taux d'attrition", "Statistiques", "Données filtrées"],
+    horizontal=True,
+    label_visibility="collapsed",
+)
 
 # ── Tab 1: Numerical distributions ─────────────────────────────────────
-with tab1:
+if selected_section == "Distributions":
     st.markdown("#### 📈 Distribution des variables numériques par statut d'attrition")
     
     col_sel, col_box = st.columns([2, 3])
@@ -181,7 +181,7 @@ with tab1:
             st.plotly_chart(fig_sub, use_container_width=True)
 
 # ── Tab 2: Categorical variables ───────────────────────────────────────
-with tab2:
+if selected_section == "Facteurs catégoriels":
     st.markdown("#### 📊 Répartition des variables catégorielles")
     cat_cols = st.columns(len(CATEGORICAL_FEATURES))
 
@@ -232,7 +232,7 @@ with tab2:
     st.plotly_chart(fig_cross, use_container_width=True)
 
 # ── Tab 3: Correlation Matrix ──────────────────────────────────────────
-with tab3:
+if selected_section == "Corrélations":
     st.markdown("#### 🔗 Matrice des Corrélations de Pearson")
     numeric_df = filtered[NUMERICAL_FEATURES].copy()
     corr_matrix = numeric_df.corr()
@@ -254,7 +254,7 @@ with tab3:
     st.plotly_chart(fig_corr, use_container_width=True)
 
 # ── Tab 4: Attrition deep-dive ─────────────────────────────────────────
-with tab4:
+if selected_section == "Taux d'attrition":
     st.markdown("#### 📉 Analyse ciblée du taux de démission")
     col_a1, col_a2 = st.columns(2)
 
@@ -319,7 +319,7 @@ with tab4:
     st.plotly_chart(fig_heat, use_container_width=True)
 
 # ── Tab 5: Detailed Statistics ─────────────────────────────────────────
-with tab5:
+if selected_section == "Statistiques":
     st.markdown("#### 📋 Statistiques Descriptives & Tests d'Écart")
     
     stat_df = filtered.groupby(TARGET)[NUMERICAL_FEATURES].agg(["mean", "std", "median"])
@@ -351,7 +351,7 @@ with tab5:
     )
 
 # ── Tab 6: Filtered Raw Data ───────────────────────────────────────────
-with tab6:
+if selected_section == "Données filtrées":
     st.markdown(f"#### 🔍 Échantillon des données sélectionnées ({total_filtered:,} lignes)")
     st.dataframe(
         filtered.head(50),
