@@ -1,0 +1,13 @@
+,test,statistique,p_value,effet,mesure_effet,sens,p_adj_BH,significatif,taille_effet
+JobSatisfaction,Mann-Whitney U,3434871.5,2.6619315857606107e-17,0.16371454160042787,|r| biserial,↓ chez les partants,3.194317902912733e-16,True,faible
+WorkLifeBalance,Mann-Whitney U,3533059.5,1.7967077964557385e-13,0.13980878658474905,|r| biserial,↓ chez les partants,1.078024677873443e-12,True,faible
+JobLevel,Mann-Whitney U,3601884.5,2.6552680823471325e-10,0.12305201804934662,|r| biserial,↓ chez les partants,7.965804247041397e-10,True,faible
+YearsAtCompany,Mann-Whitney U,3609871.0,1.6656750980399741e-09,0.12110755118544547,|r| biserial,↓ chez les partants,3.9976202352959375e-09,True,faible
+MonthlyIncome,Mann-Whitney U,3623073.0,4.850615801587378e-09,0.11789327064488053,|r| biserial,↓ chez les partants,9.701231603174755e-09,True,faible
+Age,Mann-Whitney U,3778034.5,6.838593652375573e-05,0.08016491630563227,|r| biserial,↓ chez les partants,0.00011723303404072409,True,négligeable
+OverTime,Khi-deux,47.58041260090239,5.279334839813574e-12,0.06897855652367799,V de Cramér,,2.1117339359254297e-11,True,négligeable
+PerformanceRating,Mann-Whitney U,3838591.0,0.00041109536403752066,0.06542127295199485,|r| biserial,↓ chez les partants,0.000616643046056281,True,négligeable
+PromotionLast5Years,Khi-deux,6.485554673336397,0.01087545981695215,0.025466752194452272,V de Cramér,,0.014500613089269533,True,négligeable
+Department,Khi-deux,5.07451433097836,0.5342922878592318,0.02252668269181763,V de Cramér,,0.5828643140282528,False,négligeable
+TrainingHoursLastYear,Mann-Whitney U,4048756.0,0.4778907967201802,0.014252565952461937,|r| biserial,↓ chez les partants,0.5734689560642162,False,négligeable
+DistanceFromHome,Mann-Whitney U,4097537.5,0.9061234106656454,0.002375772573460999,|r| biserial,↓ chez les partants,0.9061234106656454,False,négligeable
