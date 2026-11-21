@@ -1,85 +1,81 @@
-"""Unit tests for preprocessing and data preparation routines."""
-import pytest
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+import pytest
 
 from src.preprocessing import (
-    load_raw_data,
-    prepare_data,
-    ALL_FEATURES,
-    NUMERICAL_FEATURES,
-    CATEGORICAL_FEATURES,
-    TARGET,
-    ID_COL,
+    FEATURE_COLS, NOMINAL_COLS, TARGET, IQRClipper,
+    build_preprocessor, clean_data, split_data,
 )
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 
-def test_prepare_data_contract():
-    """Verify prepare_data separates features from target and drops ID."""
-    df = load_raw_data()
-    X, y = prepare_data(df)
-    assert len(X) == len(df)
-    assert list(X.columns) == ALL_FEATURES
-    assert ID_COL not in X.columns
-    assert TARGET not in X.columns
-    assert set(y.unique()).issubset({0, 1})
+def make_df(n=200, seed=0):
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame({
+        "EmployeeID": [f"E{i}" for i in range(n)],
+        "Age": rng.integers(22, 60, n),
+        "Department": rng.choice(["Sales", "IT", "HR"], n),
+        "JobLevel": rng.integers(1, 6, n),
+        "YearsAtCompany": rng.integers(0, 20, n),
+        "MonthlyIncome": rng.integers(3000, 15000, n),
+        "JobSatisfaction": rng.integers(1, 6, n),
+        "WorkLifeBalance": rng.integers(1, 5, n),
+        "OverTime": rng.choice(["Yes", "No"], n),
+        "DistanceFromHome": rng.uniform(1, 30, n).round(1),
+        "PromotionLast5Years": rng.choice(["Yes", "No"], n),
+        "PerformanceRating": rng.integers(1, 5, n),
+        "TrainingHoursLastYear": rng.integers(5, 25, n),
+        "Attrition": rng.choice(["Yes", "No"], n, p=[0.1, 0.9]),
+    })
 
 
-def test_feature_definitions():
-    """Verify feature partitions match expected counts."""
-    assert len(NUMERICAL_FEATURES) == 9
-    assert len(CATEGORICAL_FEATURES) == 3
-    assert len(ALL_FEATURES) == 12
-    assert set(ALL_FEATURES) == set(NUMERICAL_FEATURES + CATEGORICAL_FEATURES)
+def test_clean_encodes_target_and_binaries():
+    df, _ = clean_data(make_df())
+    assert set(df[TARGET].unique()) <= {0, 1}
+    assert set(df["OverTime"].unique()) <= {0, 1}
 
 
-def test_preprocessor_transformation():
-    """Verify ColumnTransformer transforms features to valid numeric matrix."""
-    df = load_raw_data().head(50)
-    X, y = prepare_data(df)
-    
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), NUMERICAL_FEATURES),
-            ("cat", OneHotEncoder(drop="first", handle_unknown="ignore", sparse_output=False), CATEGORICAL_FEATURES),
-        ],
-        remainder="drop",
-    )
-    
-    transformed = preprocessor.fit_transform(X)
-    assert transformed.shape[0] == len(df)
-    assert transformed.shape[1] >= len(ALL_FEATURES)
-    assert np.isfinite(transformed).all()
+def test_clean_removes_duplicates_and_flags_out_of_range():
+    raw = make_df()
+    raw = pd.concat([raw, raw.iloc[[0]]], ignore_index=True)  # doublon exact
+    raw.loc[1, "Age"] = 200                                   # aberrant
+    df, rep = clean_data(raw)
+    assert rep["duplicate_rows_removed"] == 1
+    assert rep["out_of_range_to_nan"] == {"Age": 1}
+    assert df["Age"].isna().sum() == 1
 
 
-def test_target_mapping_is_no_zero_yes_one():
-    """La cible suit exactement le contrat No -> 0 et Yes -> 1."""
-    df = load_raw_data().head(50)
-    _, y = prepare_data(df)
-    expected = df[TARGET].map({"No": 0, "Yes": 1})
-    assert y.tolist() == expected.tolist()
-    assert set(y.unique()).issubset({0, 1})
+def test_clean_raises_on_missing_column():
+    with pytest.raises(ValueError):
+        clean_data(make_df().drop(columns=["Age"]))
 
 
-def test_prepare_data_does_not_mutate_input():
-    """prepare_data travaille sur une copie et n'ajoute aucune colonne."""
-    df = load_raw_data().head(5)
-    original = df.copy()
-    X, y = prepare_data(df)
-    pd.testing.assert_frame_equal(df, original)
-    assert ID_COL not in X.columns
-    assert TARGET not in X.columns
-    assert len(y) == len(df)
+def test_iqr_clipper_learns_bounds_on_fit_only():
+    train = np.arange(100, dtype=float).reshape(-1, 1)
+    clip = IQRClipper(factor=1.5).fit(train)
+    out = clip.transform(np.array([[1e6], [-1e6], [50.0]]))
+    assert out[0, 0] == clip.upper_[0] and out[1, 0] == clip.lower_[0] and out[2, 0] == 50.0
 
 
-def test_feature_names_are_unique():
-    assert len(ALL_FEATURES) == 12
-    assert len(set(ALL_FEATURES)) == 12
-    assert set(ALL_FEATURES) == set(NUMERICAL_FEATURES + CATEGORICAL_FEATURES)
+def test_preprocessor_no_leakage_and_shape():
+    df, _ = clean_data(make_df())
+    X_tr, X_te, _, _ = split_data(df, test_size=0.25)
+    pre = build_preprocessor().fit(X_tr)
+    Xtr, Xte = pre.transform(X_tr), pre.transform(X_te)
+    # Moyenne ~0 sur le train pour une variable standardisée ; pas forcément sur le test
+    assert abs(Xtr["Age"].mean()) < 1e-9
+    assert Xtr.shape[1] == Xte.shape[1] == len(FEATURE_COLS) - len(NOMINAL_COLS) + 3
+    assert not Xte.isna().any().any()
+
+
+def test_unknown_category_is_ignored():
+    df, _ = clean_data(make_df())
+    pre = build_preprocessor().fit(df[FEATURE_COLS])
+    new = df[FEATURE_COLS].head(3).copy()
+    new["Department"] = "Legal"  # catégorie jamais vue
+    assert pre.transform(new).filter(like="Department_").sum().sum() == 0
+
+
+def test_split_is_stratified():
+    df, _ = clean_data(make_df(n=1000))
+    _, _, y_tr, y_te = split_data(df)
+    assert abs(y_tr.mean() - y_te.mean()) < 0.02
