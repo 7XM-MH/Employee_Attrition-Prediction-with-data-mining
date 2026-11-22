@@ -1,46 +1,59 @@
-"""Unit tests for model loading and prediction inference."""
-import pytest
+import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
-from joblib import load
+import pytest
+from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.preprocessing import ALL_FEATURES, load_raw_data
-
-MODELS_DIR = PROJECT_ROOT / "models"
-
-# Les modèles sont des artefacts générés (voir .gitignore). Les tests ne doivent
-# échouer que si l'utilisateur a oublié de lancer l'entraînement, pas à cause
-# d'un checkout propre sans .joblib versionné.
-pytestmark = pytest.mark.skipif(
-    not (MODELS_DIR / "best_model.joblib").exists(),
-    reason="Artefacts absents : lancez python scripts/train_pipeline.py",
+from src.models import (
+    CV, EXTENSIONS, FEATURE_COLS, get_searches, get_zero_r, load_bundle, predict_employee,
+    save_bundle, slug,
 )
+from src.preprocessing import clean_data
+from tests.test_preprocessing import make_df
 
 
-def test_saved_models_exist():
-    """Verify that best_model and individual pipelines are serialized."""
-    assert (MODELS_DIR / "best_model.joblib").exists(), "best_model.joblib missing"
-    expected_models = ["ZeroR", "KNN", "DecisionTree", "RandomForest", "NaiveBayes", "SVM"]
-    for m in expected_models:
-        path = MODELS_DIR / f"{m}_pipeline.joblib"
-        assert path.exists(), f"Missing model pipeline {m}"
+@pytest.fixture(scope="module")
+def data():
+    df, _ = clean_data(make_df(n=400, seed=3))
+    return df[FEATURE_COLS], df["Attrition"]
 
 
-def test_best_model_inference():
-    """Verify that best_model produces valid binary predictions and probabilities."""
-    best_pipe = load(MODELS_DIR / "best_model.joblib")
-    df = load_raw_data().head(10)
-    X = df[ALL_FEATURES]
-    
-    preds = best_pipe.predict(X)
-    assert len(preds) == 10
-    assert set(preds).issubset({0, 1})
-    
-    if hasattr(best_pipe, "predict_proba"):
-        probas = best_pipe.predict_proba(X)
-        assert probas.shape == (10, 2)
-        assert (probas >= 0).all() and (probas <= 1).all()
+def test_cv_is_stratified_5_fold():
+    assert CV.get_n_splits() == 5
+
+
+def test_all_required_algorithms_are_defined():
+    names = set(get_searches())
+    assert {"K-NN", "Arbre de décision", "Random Forest", "SVM"} <= names
+    assert any(n.startswith("Naive Bayes") for n in names)
+    assert set(EXTENSIONS) <= names
+
+
+def test_every_search_uses_kfold_5_and_a_grid():
+    for name, s in get_searches().items():
+        assert s.cv.get_n_splits() == 5, name
+        assert (s.param_grid if hasattr(s, "param_grid") else s.param_distributions), name
+
+
+def test_pipelines_fit_and_give_probabilities(data):
+    X, y = data
+    ests = {"Zero-R": get_zero_r()}
+    ests.update({n: s.estimator for n, s in get_searches().items() if n != "SVM"})
+    ests["SVM"] = CalibratedClassifierCV(clone(get_searches()["SVM"].estimator), cv=3, ensemble=False)
+    for name, est in ests.items():
+        p = clone(est).fit(X, y).predict_proba(X)[:, 1]
+        assert p.shape == (len(X),) and np.all((p >= 0) & (p <= 1)), name
+
+
+def test_slug_is_filesystem_safe():
+    assert slug("Naive Bayes (Gaussian)") == "naive_bayes_gaussian"
+
+
+def test_bundle_roundtrip_and_prediction(data, tmp_path):
+    X, y = data
+    model = clone(get_searches()["Régression logistique"].estimator).fit(X, y)
+    path = save_bundle("LR", model, 0.3, path=tmp_path / "b.joblib")
+    bundle = load_bundle(path)
+    rec = X.iloc[0].to_dict()
+    out = predict_employee(bundle, rec)
+    assert 0 <= out["probability"][0] <= 1 and out["prediction"][0] in (0, 1) and out["threshold"] == 0.3

@@ -1,0 +1,9 @@
+modèle,type,recherche,combinaisons,AP_cv,AP_std,ROC_AUC_cv,F1_cv,meilleurs_hyperparamètres
+K-NN,cours,GridSearchCV,36,0.15676906928719458,0.00868667708728748,0.6401334996285561,0.0,"{'metric': 'manhattan', 'n_neighbors': 800, 'weights': 'uniform'}"
+Arbre de décision,cours,GridSearchCV,144,0.14555085211403593,0.008150528062540399,0.6313538312765561,0.21123828760820235,"{'ccp_alpha': 0.0005, 'criterion': 'gini', 'max_depth': 10, 'min_samples_leaf': 100}"
+Random Forest,cours,RandomizedSearchCV,15,0.1691204761889278,0.011297169426476522,0.6579802091349816,0.22546868203922837,"{'n_estimators': 200, 'min_samples_leaf': 40, 'max_features': 'sqrt', 'max_depth': 2, 'criterion': 'entropy'}"
+Naive Bayes (Gaussian),cours,GridSearchCV,11,0.14241661750465742,0.007612423252715366,0.6179210464469863,0.0,{'var_smoothing': np.float64(0.1)}
+Naive Bayes (Bernoulli),cours,GridSearchCV,18,0.16154535361315314,0.016300325227673412,0.6401697698593918,0.035477354669434503,"{'alpha': 5.0, 'prep__num__kbins__n_bins': 3}"
+SVM,cours,GridSearchCV,22,0.1498554620505241,0.012388704449028677,0.6379787141219665,0.21727805855288396,"{'C': 10, 'gamma': 0.0005, 'kernel': 'rbf'}"
+Régression logistique,extension,GridSearchCV,5,0.15250194397946976,0.013550108167078372,0.6383342069129373,0.22048587087059915,{'C': 0.01}
+Gradient Boosting,extension,GridSearchCV,81,0.1729445239543767,0.01362118212101158,0.659489663254005,0.22600517710551687,"{'learning_rate': 0.1, 'max_depth': 1, 'max_iter': 200, 'min_samples_leaf': 100}"
