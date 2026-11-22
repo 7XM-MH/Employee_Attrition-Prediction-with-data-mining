@@ -1,289 +1,221 @@
-#  Employee Attrition Prediction Using Data Mining
+# Employee Attrition — Mini-projet Data Mining 2026/2027
 
-> **Data Mining Mini-Project 2026/2027 — Track A: Supervised Classification**
-> 🌐 **Live Web Application:** `<STREAMLIT_APP_URL>` · 
->📄 **Report:** [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf)
+> Classification binaire supervisée + clustering non supervisé — pipeline end-to-end.
+> Jeu de données : 10 000 employés, 12 variables explicatives, cible `Attrition` (`No` / `Yes`).
 
----
-
-> ⚠️ **DISCLAIMER**
-> This project is developed for academic and educational purposes only. The dataset is a *synthetic simulation*; predictions must not be used for real HR decisions.
+> [!WARNING]
+> Projet **académique et fictif**. Les données sont synthétiques. Aucune prédiction ne doit être utilisée pour une décision RH réelle.
 
 ---
 
-## 📌 Project Overview & Problem Statement
+## 1. Compréhension métier
 
-Employee turnover is costly: recruitment, onboarding, lost knowledge and lower team morale. Identifying employees at risk of leaving early lets HR teams act before it happens.
+Le renouvellement du personnel coûte cher (recrutement, intégration, perte de compétences, baisse de moral). L'objectif est d'anticiper les départs en identifiant les facteurs individuels et organisationnels associés à l'attrition.
 
-**Core Research Question:** *"Can demographic, job-related and work-environment factors (income, work-life balance, overtime, tenure, job satisfaction, etc.) accurately predict whether an employee will stay or leave the company?"*
+**Question métier :** les caractéristiques démographiques, hiérarchiques et d'environnement de travail (revenu, ancienneté, heures supplémentaires, satisfaction, équilibre vie pro/perso…) permettent-elles de prédire si un employé va quitter l'entreprise ?
 
-This repository implements an end-to-end Data Mining pipeline:
-
-1. Data acquisition and quality audit (raw ≥ 10,000 records, ≥ 10 attributes).
-2. Preprocessing: missing values, outliers, encoding, scaling (leakage-free, via scikit-learn `Pipeline` / `ColumnTransformer`).
-3. Exploratory Data Analysis (EDA) and statistical hypothesis testing (χ², Mann-Whitney U, Spearman, …).
-4. Supervised classification benchmark: **Zero-R, K-NN, Decision Tree / Random Forest, Naïve Bayes, SVM**.
-5. Hyperparameter optimisation with `GridSearchCV` / `RandomizedSearchCV` (Stratified K-Fold, K ≥ 5).
-6. Interactive **Streamlit** web app with a selectable light/dark theme (EDA dashboard + real-time prediction).
-7. Scientific report (PDF) in `docs/`.
-
-> 🤖 **ML vs LLM policy:** only classical ML algorithms are used for prediction. No Deep Learning / LLM is used as a predictive model.
+**Tâche Data Mining retenue :** classification binaire supervisée (`No → 0`, `Yes → 1`), complétée par une analyse non supervisée descriptive. Aucun deep learning ni LLM n'est utilisé comme modèle prédictif.
 
 ---
 
-## 📊 Dataset
+## 2. Jeu de données
 
-| Item | Value |
+| Propriété | Valeur |
 |---|---|
-| **Name** | Employee Attrition Classification Dataset |
-| **Author** | stealthtechnologies |
-| **Source** | [Kaggle](https://www.kaggle.com/datasets/stealthtechnologies/employee-attrition-dataset) |
-| **Files** | `train.csv`, `test.csv` |
-| **Task** | Binary classification |
-| **Target** | `Attrition` (`Stayed` / `Left`) |
-| **Records** | `<N_TRAIN>` train / `<N_TEST>` test |
-| **Attributes** | `<N_COLS>` columns (numerical + categorical) |
+| Fichier | `data/raw/Employee_Attrition_DataSet.csv` |
+| Dimensions | **10 000 lignes × 14 colonnes** |
+| Identifiant | `EmployeeID` — exclu de `X` |
+| Cible | `Attrition` — `No` : 9 097 (90,97 %), `Yes` : 903 (9,03 %) |
+| Variables explicatives | **12** : 5 quantitatives, 4 ordinales, 2 binaires, 1 nominale |
+| Valeurs manquantes | 0 |
+| Doublons | 0 |
+| Nature | Dataset synthétique à usage pédagogique |
 
-**Main attributes:** Age, Gender, Years at Company, Job Role, Monthly Income, Work-Life Balance, Job Satisfaction, Performance Rating, Number of Promotions, Overtime, Distance from Home, Education Level, Marital Status, Number of Dependents, Job Level, Company Size, Company Tenure, Remote Work, Leadership Opportunities, Innovation Opportunities, Company Reputation, Employee Recognition.
+Les 12 features sont : `Age`, `YearsAtCompany`, `MonthlyIncome`, `DistanceFromHome`, `TrainingHoursLastYear`, `JobLevel`, `JobSatisfaction`, `WorkLifeBalance`, `PerformanceRating`, `OverTime`, `PromotionLast5Years`, `Department`.
 
-### Dataset audit summary
+Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictionary.md`](docs/data_dictionary.md) (types, échelles de mesure, plages, statistiques descriptives).
 
-| Check | Result |
+> Le déséquilibre d'environ 10:1 justifie le **F1-score** et l'**Average Precision** comme critères principaux, plutôt que l'accuracy (un modèle qui prédit toujours `No` obtient déjà 0,9095 d'accuracy).
+
+---
+
+## 3. Démarche CRISP-DM (6 étapes)
+
+| Étape | Livrables concrets |
 |---|---|
-| Total records | `<TODO>` |
-| Missing values | `<TODO>` |
-| Duplicates | `<TODO>` |
-| Target distribution | `<TODO % Stayed>` / `<TODO % Left>` |
+| **1. Compréhension métier** | §1 ci-dessus, [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md) |
+| **2. Compréhension des données** | [`DISCOVERY.md`](DISCOVERY.md), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb), [`results/descriptive_stats.csv`](results/descriptive_stats.csv), figures `01` à `08` |
+| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/02_statistical_analysis.ipynb`](notebooks/02_statistical_analysis.ipynb) |
+| **4. Modélisation** | [`scripts/train_pipeline.py`](scripts/train_pipeline.py) (pipeline du guide), [`scripts/train_models.py`](scripts/train_models.py) + [`src/models.py`](src/models.py) (analyse étendue), [`results/cv_summary.csv`](results/cv_summary.csv), figures `09` à `16` |
+| **5. Évaluation** | [`results/model_comparison.csv`](results/model_comparison.csv), `results/*.json`, [`tests/`](tests/), figures `17` à `23` |
+| **6. Déploiement et surveillance** | Modèles `joblib` dans `models/`, application Streamlit dans `app/` ; surveillance et concept drift discutés en limite (§9) |
 
-> 💾 If the data exceeds 100 MB, host it externally and use `scripts/download_data.py` (via `kagglehub`) instead of committing it.
-
-```python
-import kagglehub
-path = kagglehub.dataset_download("stealthtechnologies/employee-attrition-dataset")
-print("Path to dataset files:", path)
-```
+Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à ajuster la préparation (étape 3) et la modélisation (étape 4).
 
 ---
 
-## 🧪 Statistical Hypothesis Testing
+## 4. Notebooks et scripts
 
-Significance level α = 0.05, with multiple-testing correction (Benjamini-Hochberg FDR) and effect sizes.
-
-| ID | Hypothesis | Test | Justification | p-value | Effect size | Decision |
-|---|---|---|---|---|---|---|
-| H1 | Overtime ⟂ Attrition | Chi-square | Two categorical variables | `<TODO>` | Cramér's V = `<TODO>` | `<TODO>` |
-| H2 | Monthly Income differs between Stayed / Left | Mann-Whitney U | Non-normal numeric (Shapiro-Wilk) vs binary group | `<TODO>` | `<TODO>` | `<TODO>` |
-| H3 | Work-Life Balance ⟂ Attrition | Chi-square | Ordinal/categorical vs categorical | `<TODO>` | `<TODO>` | `<TODO>` |
-| H4 | Age vs Years at Company | Spearman | Monotonic, non-normal | `<TODO>` | ρ = `<TODO>` | `<TODO>` |
-
-> Replace with the tests you actually ran (minimum required: 2, each with a justification of why the test is appropriate).
-
----
-
-## 🏆 Model Performance Benchmark
-
-All models were tuned with `GridSearchCV` / `RandomizedSearchCV` using **Stratified 5-Fold Cross-Validation** and evaluated on a hold-out test set.
-
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | CV Score (F1) |
-|---|---|---|---|---|---|---|
-| Zero-R Baseline | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | 0.5000 | `<TODO>` |
-| K-Nearest Neighbors | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` |
-| Decision Tree | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` |
-| Random Forest | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` |
-| Naïve Bayes | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` |
-| SVM | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` | `<TODO>` |
-
-**Best model:** `<MODEL_NAME>` — Accuracy `<X>`, ROC-AUC `<Y>`.
-
-### Best hyperparameters
-
-| Model | Tuned parameters |
+| Fichier | Rôle |
 |---|---|
-| K-NN | `n_neighbors`, `metric`, `weights` |
-| Decision Tree / RF | `max_depth`, `min_samples_leaf`, `ccp_alpha`, `n_estimators` |
-| Naïve Bayes | `var_smoothing` / `alpha` (Laplace smoothing) |
-| SVM | `kernel` (RBF / linear / poly), `C`, `gamma` |
-
-### Figures
-
-| ROC curves | Confusion matrices | Feature importance |
-|---|---|---|
-| ![ROC](docs/figures/roc_curves.png) | ![CM](docs/figures/confusion_matrices.png) | ![FI](docs/figures/feature_importance.png) |
-
----
-
-## 💡 Key Findings
-
-1. `<Finding 1 — e.g. class balance and which metric you prioritised>`
-2. `<Finding 2 — e.g. top drivers of attrition (overtime, work-life balance, job satisfaction…)>`
-3. `<Finding 3 — e.g. best vs baseline gap>`
-4. `<Finding 4 — e.g. trade-off between recall and precision for HR use>`
+| `notebooks/01_eda_and_cleaning.ipynb` | EDA, audit qualité, détection/écrêtage IQR des outliers, distributions, corrélations |
+| `notebooks/02_statistical_analysis.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
+| `notebooks/02_preprocessing_encoding.ipynb` | Encodage Y/X, normalisation, split train/test sans fuite |
+| `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, gain/lift, importance par permutation |
+| `scripts/run_preprocessing.py` | Prétraitement reproductible brut → `data/processed/` + `models/preprocessor.joblib` |
+| `scripts/train_pipeline.py` | Pipeline du guide : 6 modèles imposés, StratifiedKFold(5), artefacts JSON |
+| `scripts/train_models.py` | Analyse étendue : 9 modèles, recherche AP, bootstrap, optimisation du seuil |
+| `scripts/run_unsupervised.py` | KMeans, PCA, agglomératif, DBSCAN |
+| `scripts/generate_figures.py`, `scripts/generate_notebooks.py` | Génération des livrables graphiques / notebooks |
 
 ---
 
-## 🌐 Interactive Streamlit Web Application
+## 5. Tests statistiques (α = 0,05, correction BH)
 
-| Page | Content |
-|---|---|
-| **Home** | Project summary, key metrics |
-| **EDA Dashboard** | Descriptive stats, missing data, numeric distributions, categorical frequencies, correlation matrix, ≥ 1 interactive filter |
-| **Model Benchmark** | Comparison table, ROC curves, confusion matrices |
-| **Attrition Predictor** | Input form → real-time Stay / Leave prediction with probability |
-| **About** | Team roles, tech stack |
+Extrait de [`results/stat_tests_vs_attrition.csv`](results/stat_tests_vs_attrition.csv) — 12 variables testées, 10 significatives après correction :
+
+| Variable | Test | p-value ajustée (BH) | Taille d'effet | Sens |
+|---|---|---:|---:|---|
+| `JobSatisfaction` | Mann-Whitney U | 3,2 × 10⁻¹⁶ | \|r\| = 0,164 (faible) | plus basse chez les partants |
+| `WorkLifeBalance` | Mann-Whitney U | 1,1 × 10⁻¹² | \|r\| = 0,140 (faible) | plus bas chez les partants |
+| `JobLevel` | Mann-Whitney U | 8,0 × 10⁻¹⁰ | \|r\| = 0,123 (faible) | plus bas chez les partants |
+| `OverTime` | χ² | 2,1 × 10⁻¹¹ | V = 0,069 (négligeable) | lien significatif |
+| `Department` | χ² | 0,583 | V = 0,023 | non significatif |
+
+Fichiers complémentaires : [`stat_spearman_paires.csv`](results/stat_spearman_paires.csv), [`stat_normalite_shapiro.csv`](results/stat_normalite_shapiro.csv), [`stat_kruskal_wallis.csv`](results/stat_kruskal_wallis.csv).
+
+---
+
+## 6. Résultats supervisés
+
+### 6.1 Pipeline du guide — 6 modèles imposés
+
+`python scripts/train_pipeline.py` — split 80/20 stratifié, `StratifiedKFold(n_splits=5)`, `GridSearchCV`/`RandomizedSearchCV`, sélection sur le **F1 moyen en validation croisée**, test réservé à l'évaluation finale.
+
+| Modèle | F1 CV | Accuracy | Precision | Recall | F1 test | ROC-AUC |
+|---|---:|---:|---:|---:|---:|---:|
+| ZeroR | 0,0000 | 0,9095 | 0,0000 | 0,0000 | 0,0000 | 0,5000 |
+| KNN | 0,0542 | 0,8930 | 0,1633 | 0,0442 | 0,0696 | 0,5424 |
+| **DecisionTree** | **0,1365** | 0,8645 | 0,1484 | 0,1050 | **0,1230** | 0,5406 |
+| RandomForest | 0,0055 | 0,9090 | 0,0000 | 0,0000 | 0,0000 | 0,5921 |
+| NaiveBayes | 0,0833 | 0,8915 | 0,2000 | 0,0663 | 0,0996 | 0,6206 |
+| SVM | 0,0027 | 0,9085 | 0,0000 | 0,0000 | 0,0000 | 0,5404 |
+
+**Modèle retenu : `DecisionTree`** — F1 CV = 0,1365 ± 0,0230, F1 test = 0,1230, ROC-AUC = 0,5406. Son excédent par rapport à ZeroR reste faible : le signal prédictif de ce jeu synthétique est limité.
+
+### 6.2 Analyse étendue — 9 modèles et optimisation du seuil
+
+`python scripts/train_models.py` — sélection sur l'**Average Precision** en CV 5 plis, intervalles de confiance bootstrap, seuil de décision optimisé, calibration, gain/lift, importance par permutation.
+
+| Modèle | AP CV | ROC-AUC test | PR-AUC test | Seuil optimal | F1 au seuil |
+|---|---:|---:|---:|---:|---:|
+| Zero-R | — | 0,5000 | 0,0905 | 0,500 | 0,0000 |
+| K-NN | 0,1568 | 0,6511 | 0,1691 | 0,134 | 0,2365 |
+| Arbre de décision | 0,1456 | 0,6083 | 0,1369 | 0,121 | 0,1972 |
+| Random Forest | 0,1691 | 0,6550 | 0,1630 | 0,111 | 0,2351 |
+| Naive Bayes (Gaussian) | 0,1424 | 0,6254 | 0,1435 | 0,096 | 0,2056 |
+| Naive Bayes (Bernoulli) | 0,1615 | 0,6341 | 0,1520 | 0,105 | 0,2194 |
+| SVM | 0,1499 | 0,6554 | 0,1576 | 0,110 | 0,2391 |
+| Régression logistique *(extension)* | 0,1525 | 0,6564 | 0,1595 | 0,116 | 0,2392 |
+| **Gradient Boosting** *(extension)* | **0,1729** | **0,6648** | **0,1732** | 0,118 | **0,2527** |
+
+**Point clé :** au seuil par défaut de 0,5, **tous** les modèles ont un F1 de 0 (aucun employé prédit partant). L'optimisation du seuil sur les données d'entraînement/validation est indispensable avec 9 % de classe positive. Le choix du modèle reste fait sur la CV, jamais sur le test.
+
+Les deux pipelines ont des critères de sélection différents : `DecisionTree` est le modèle du **guide** (F1 CV), `Gradient Boosting` est le meilleur de l'**analyse étendue** (AP CV). Les deux résultats sont conservés et documentés séparément.
+
+Figures : [`reports/figures/17_comparaison_cv.png`](reports/figures/17_comparaison_cv.png), [`18_roc_pr_test.png`](reports/figures/18_roc_pr_test.png), [`19_confusions_seuil_optimise.png`](reports/figures/19_confusions_seuil_optimise.png), [`20_calibration.png`](reports/figures/20_calibration.png), [`21_gain_lift.png`](reports/figures/21_gain_lift.png), [`22_choix_du_seuil.png`](reports/figures/22_choix_du_seuil.png), [`23_importance_permutation.png`](reports/figures/23_importance_permutation.png).
+
+---
+
+## 7. Clustering non supervisé
+
+`python scripts/run_unsupervised.py` — `Attrition` n'est **jamais** utilisée pendant l'ajustement ; elle sert uniquement à interpréter les groupes après coup.
+
+| Méthode | Paramètres | Résultat | Silhouette |
+|---|---|---|---:|
+| PCA | 2 composantes | 40,58 % de variance expliquée | — |
+| KMeans | k = 4 | 4 groupes (1 284 / 2 074 / 3 284 / 3 358) | 0,1051 |
+| AgglomerativeClustering | 4 groupes, connectivité 10-PPV | 4 groupes (4 245 / 3 118 / 1 786 / 851) | 0,0732 |
+| DBSCAN | eps = 0,18 ; min_samples = 25 | 2 groupes + 1 394 points de bruit | 0,2675 |
+
+Le taux de départ du cluster KMeans le plus à risque est de 10,9 % contre 5,8 % pour le plus faible : une Segmentation exploitable reste limitée (silhouettes faibles).
+
+---
+
+## 8. Reproduction
 
 ```bash
-streamlit run src/app.py
-```
-
----
-
-## 📁 Repository Structure
-
-```
-.
-├── README.md
-├── LICENSE
-├── .gitignore
-├── requirements.txt
-├── data/
-│   ├── raw/                 # train.csv, test.csv (or download script)
-│   └── processed/
-├── notebooks/
-│   ├── 01_eda_and_cleaning.ipynb
-│   ├── 02_statistical_analysis.ipynb
-│   ├── 03_preprocessing.ipynb
-│   └── 04_model_training_evaluation.ipynb
-├── src/
-│   ├── app.py               # Streamlit application
-│   ├── preprocessing.py
-│   ├── models.py
-│   ├── evaluation.py
-│   └── utils.py
-├── models/                  # saved pipeline + best model (.joblib)
-├── results/                 # metrics, test results (json/csv)
-├── scripts/                 # download / training scripts
-└── docs/
-    ├── Rapport_MiniProject.pdf
-    └── figures/
-```
-
----
-
-## ⚙️ Installation & Reproducibility
-
-**Prerequisites:** Python 3.10+ and `pip`.
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/<USERNAME>/<REPO_NAME>.git
-cd <REPO_NAME>
-
-# 2. (Recommended) create a virtual environment
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
+venv\Scripts\activate            # Linux/macOS : source venv/bin/activate
 pip install -r requirements.txt
 
-# 4. Download the dataset (needs a Kaggle account / API token)
-python scripts/download_data.py
-
-# 5. Run the training pipeline
-python scripts/train_pipeline.py
-
-# 6. Launch the web app
-streamlit run src/app.py
+python scripts/run_preprocessing.py   # données traitées + preprocessor.joblib
+python scripts/train_pipeline.py      # pipeline du guide (6 modèles)
+python scripts/train_models.py        # analyse étendue (9 modèles, plus long)
+python scripts/run_unsupervised.py    # clustering
+pytest tests -q                       # suite de tests
+streamlit run app/Home.py             # application web
 ```
 
----
+Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par Git** (voir `.gitignore`) : ils sont recréés par les scripts ci-dessus. Les `.csv` de résultats et les figures de `reports/figures/` sont versionnés.
 
-## 👥 Team & Contributions
-<!-- 
-| Student | Student code | GitHub | Role & responsibilities |
-|---|---|---|---|
-| `<Full name>` (Leader) | `<CODE>` | [@username1](https://github.com/username1) | Preprocessing, project coordination |
-| `<Full name>` | `<CODE>` | [@username2](https://github.com/username2) | EDA & statistical tests |
-| `<Full name>` | `<CODE>` | [@username3](https://github.com/username3) | Modeling & optimisation |
-| `<Full name>` | `<CODE>` | [@username4](https://github.com/username4) | Streamlit app |
-| `<Full name>` | `<CODE>` | [@username5](https://github.com/username5) | Report & documentation |
-
-> Each member contributes through their **own GitHub account** with regular, individual commits. -->
+> [!NOTE]
+> **État connu :** le refactoring de `src/preprocessing.py` a remplacé `ALL_FEATURES` par `FEATURE_COLS` et `load_raw_data()` par `load_raw(path)`. `scripts/train_pipeline.py`, `src/unsupervised.py` et trois fichiers de tests importent encore les anciens noms ; leur exécution échoue temporairement. Un correctif de compatibilité est prévu dans une PR séparée. Cette PR ne modifie que la documentation.
 
 ---
 
-## 📜 References
+## 9. Couverture du programme du cours
 
-- stealthtechnologies, *Employee Attrition Classification Dataset*, Kaggle.
-- Pedregosa et al., *Scikit-learn: Machine Learning in Python*, JMLR 12:2825-2830, 2011.
-- Course material — Data Mining 2026/2027.
-
-<!-- ## 📄 License
-
-Released under the MIT License — see [`LICENSE`](LICENSE). -->
+| notions du cours | Statut |
+|---|---|
+| Pipeline end-to-end, ≥ 10 000 lignes, ≥ 10 attributs | ✅ |
+| Types et échelles de mesure, one-hot / ordinal, Z-score | ✅ [`docs/data_dictionary.md`](docs/data_dictionary.md) |
+| Outliers IQR + écrêtage | ✅ dataset + notebooks |
+| Outliers Z-score, Isolation Forest, LOF | ❌ non implémentés |
+| Similarités euclidienne / Manhattan | ✅ KNN, KMeans |
+| Similarité cosinus, Minkowski | ❌ non testées |
+| Classification supervisée, CV 5 plis, métriques | ✅ |
+| K-NN, arbres, forêts, Naive Bayes, SVM | ✅ |
+| K-Medoids (PAM), DIANA, dendrogramme | ❌ hors lots livrés |
+| Choix de k pour KMeans (coude / silhouette) | ❌ k = 4 fixé |
+| Silhouette | ✅ |
+| Davies-Bouldin, indice de Dunn | ❌ |
+| Règles d'association (support, confiance) | ❌ hors périmètre du projet |
+| CRISP-DM en 6 étapes | ✅ §3 |
+| Déploiement `joblib`, application web | ✅ |
+| Surveillance / concept drift | ⚠️ documenté comme limite, non implémenté |
+| Rapport scientifique PDF | ⚠️ en cours (lot suivant) |
 
 ---
 
-## Application web (Streamlit)
+## 10. Anonymat, éthique et limites
 
-- **Statut :** ✅ Opérationnelle
-- **Commande de lancement :**
-  ```bash
-  streamlit run app/Home.py
-  ```
+- **Anonymat :** seuls des codes étudiants sont autorisés dans les livrables. Aucun nom, prénom, matricule ni e-mail personnel n'apparaît dans les fichiers texte suivis du dépôt (vérification effectuée). Les commits restent attribués à chaque compte GitHub individuel, comme demandé pour le suivi des contributions.
+- **Éthique :** jeu synthétique, aucune donnée personnelle réelle ; recommandations RH non automatisées ; biais algorithmiques et discrimination involontaire à surveiller.
+- **Limites :** déséquilibre 9 %, F1 modeste, signal prédictif faible, clustering peu séparé, données statiques sans détection de dérive conceptuelle.
 
-### Design System
+---
 
-L'application utilise un **thème indigo professionnel** (`#4F46E5`) avec :
-
-- `.streamlit/config.toml` — thème Streamlit (couleur primaire, fond clair, texte sombre)
-- `app/style.css` — styles personnalisés : cartes KPI, badges de risque (vert/orange/rouge), sidebar branded
-- `app/utils.py` — composants réutilisables : `kpi_card()`, `risk_badge()`, `section_header()`, `gauge_chart()`
-- Graphiques **Plotly** avec palette cohérente (template `plotly_white`)
-
-### Arborescence
+## 11. Structure du dépôt
 
 ```text
-app/
-├── Home.py                    # Page d'accueil avec KPI globaux et navigation
-├── utils.py                   # Composants UI, chargement données/modèles
-├── style.css                  # Feuille de styles CSS personnalisée
-└── pages/
-    ├── 1_Dashboard.py         # 📊 Dashboard analytique interactif
-    ├── 2_Prediction.py        # 🔮 Prédiction individuelle + What-If + SHAP
-    ├── 3_Performance_Modeles.py # 🏆 Benchmark 6 modèles
-    ├── 4_Facteurs_Demission.py  # 🔍 Feature importance + SHAP global
-    ├── 5_Prediction_en_lot.py   # 📦 Prédiction CSV en lot
-    └── 6_A_Propos.py            # 📖 Documentation & éthique
+.
+├── README.md, DISCOVERY.md
+├── data/raw/                  # CSV source (10 000 × 14)
+├── data/processed/            # .gitkeep + données générées (ignorées)
+├── notebooks/                 # 4 notebooks
+├── src/                       # preprocessing, models, evaluation, stats_tests, unsupervised…
+├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised…
+├── models/                    # .gitkeep + .joblib générés (ignorés)
+├── results/                   # CSV versionnés + JSON générés (ignorés)
+├── reports/figures/           # 23 figures
+├── docs/                      # guide, dictionnaire de données, figures
+├── app/                       # application Streamlit (interface)
+└── tests/                     # suite pytest
 ```
 
-### Pages disponibles
+## 12. Références
 
-| Page | Description / Fonctionnalités |
-|---|---|
-| **1. Dashboard** | KPI, distributions, corrélations, filtres globaux (département, âge, revenus, overtime) |
-| **2. Prédiction individuelle** | Formulaire interactif, jauge de risque, recommandations RH ciblées, simulation What-If, explications SHAP locales |
-| **3. Performance des modèles** | Métriques (Accuracy, F1, ROC-AUC, MCC), matrices de confusion, courbes ROC comparatives |
-| **4. Facteurs de démission** | Feature importance (Random Forest), SHAP global (beeswarm), top 5 facteurs de départ |
-| **5. Prédiction en lot** | Upload CSV multi-employés, tableau trié par risque, export Excel/CSV |
-| **6. À Propos** | Pipeline Data Mining, dictionnaire des données, mentions éthiques |
-
----
-
-## 📓 Notebooks Jupyter
-
-L'analyse exploratoire (EDA), le nettoyage des données et les tests d'hypothèses statistiques sont menés dans les notebooks dédiés :
-
-| Notebook | Description / Contenu |
-|---|---|
-| [`01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) | **EDA & Nettoyage :** audit qualité (NaN, doublons, constantes), détection et écrêtage des outliers (IQR × 1.5), pipeline de nettoyage avec comparaison avant/après, analyse univariée (distributions & formes), bivariée (boxplots, barres empilées), heatmap de corrélations, analyse du déséquilibre de classes et export |
-| [`02_statistical_analysis.ipynb`](notebooks/02_statistical_analysis.ipynb) | **Tests d'hypothèses statistiques :** H1 (OverTime ⟂ Attrition, χ²), H2 (MonthlyIncome × Attrition, Mann-Whitney U), H3 (WorkLifeBalance ⟂ Attrition, χ²), H4 (Age vs YearsAtCompany, Spearman), correction Benjamini-Hochberg FDR, tailles d'effet (Cramér's V, Cohen's d), ANOVA |
-
-### Technologies
-
-- Streamlit
-- Plotly
-- scikit-learn
-- SHAP
-- pandas / numpy
-- scipy / statsmodels
-- joblib
+- Support de cours *Introduction au Data Mining*, 2026/2027 — Ph.D. Hosni Adil Imad Eddine (citation bibliographique, aucune coordonnée personnelle reproduite).
+- Pedregosa et al., *Scikit-learn: Machine Learning in Python*, JMLR 12:2825-2830, 2011.
+- Guide interne [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md).
