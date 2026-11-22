@@ -1,0 +1,9 @@
+,roc_auc,pr_auc,f1,balanced_accuracy,mcc,kappa,brier,log_loss,rang_moyen
+Gradient Boosting,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0
+Régression logistique,2.0,4.0,2.0,3.0,3.0,3.0,4.0,4.0,3.125
+K-NN,5.0,2.0,4.0,5.0,4.0,2.0,2.0,2.0,3.25
+SVM,3.0,5.0,3.0,2.0,2.0,4.0,5.0,5.0,3.625
+Random Forest,4.0,3.0,5.0,4.0,5.0,5.0,3.0,3.0,4.0
+Naive Bayes (Bernoulli),6.0,6.0,6.0,6.0,6.0,6.0,6.0,6.0,6.0
+Naive Bayes (Gaussian),7.0,7.0,7.0,7.0,7.0,8.0,7.0,7.0,7.125
+Arbre de décision,8.0,8.0,8.0,8.0,8.0,7.0,8.0,8.0,7.875
