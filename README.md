@@ -6,6 +6,8 @@
 > [!WARNING]
 > Projet **académique et fictif**. Les données sont synthétiques. Aucune prédiction ne doit être utilisée pour une décision RH réelle.
 
+> Pilotage : [plan de projet](docs/PLAN_PROJET.md) · [convention de contribution](CONTRIBUTING.md).
+
 ---
 
 ## 1. Compréhension métier
@@ -45,7 +47,7 @@ Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictio
 |---|---|
 | **1. Compréhension métier** | §1 ci-dessus, [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md) |
 | **2. Compréhension des données** | [`DISCOVERY.md`](DISCOVERY.md), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb), [`results/descriptive_stats.csv`](results/descriptive_stats.csv), figures `01` à `08` |
-| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/02_statistical_analysis.ipynb`](notebooks/02_statistical_analysis.ipynb) |
+| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) |
 | **4. Modélisation** | [`scripts/train_pipeline.py`](scripts/train_pipeline.py) (pipeline du guide), [`scripts/train_models.py`](scripts/train_models.py) + [`src/models.py`](src/models.py) (analyse étendue), [`results/cv_summary.csv`](results/cv_summary.csv), figures `09` à `16` |
 | **5. Évaluation** | [`results/model_comparison.csv`](results/model_comparison.csv), `results/*.json`, [`tests/`](tests/), figures `17` à `23` |
 | **6. Déploiement et surveillance** | Modèles `joblib` dans `models/`, application Streamlit dans `app/` ; surveillance et concept drift discutés en limite (§9) |
@@ -59,7 +61,7 @@ Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à a
 | Fichier | Rôle |
 |---|---|
 | `notebooks/01_eda_and_cleaning.ipynb` | EDA, audit qualité, détection/écrêtage IQR des outliers, distributions, corrélations |
-| `notebooks/02_statistical_analysis.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
+| `notebooks/01_eda_and_cleaning.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
 | `notebooks/02_preprocessing_encoding.ipynb` | Encodage Y/X, normalisation, split train/test sans fuite |
 | `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, gain/lift, importance par permutation |
 | `scripts/run_preprocessing.py` | Prétraitement reproductible brut → `data/processed/` + `models/preprocessor.joblib` |
