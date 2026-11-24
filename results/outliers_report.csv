@@ -1,0 +1,21 @@
+methode,variable,n_outliers,pct_outliers,seuil,action_recommandee
+Z-score,Age,0,0.0,|z| > 3,winsorisation après vérification manuelle
+Z-score,YearsAtCompany,83,0.83,|z| > 3,winsorisation après vérification manuelle
+Z-score,MonthlyIncome,16,0.16,|z| > 3,winsorisation après vérification manuelle
+Z-score,DistanceFromHome,137,1.37,|z| > 3,winsorisation après vérification manuelle
+Z-score,TrainingHoursLastYear,35,0.35,|z| > 3,winsorisation après vérification manuelle
+Z-score,JobLevel,0,0.0,|z| > 3,winsorisation après vérification manuelle
+Z-score,JobSatisfaction,0,0.0,|z| > 3,winsorisation après vérification manuelle
+Z-score,WorkLifeBalance,0,0.0,|z| > 3,winsorisation après vérification manuelle
+Z-score,PerformanceRating,0,0.0,|z| > 3,winsorisation après vérification manuelle
+IQR,Age,0,0.0,IQR x1.5,winsorisation après vérification manuelle
+IQR,YearsAtCompany,142,1.42,IQR x1.5,winsorisation après vérification manuelle
+IQR,MonthlyIncome,12,0.12,IQR x1.5,winsorisation après vérification manuelle
+IQR,DistanceFromHome,306,3.06,IQR x1.5,winsorisation après vérification manuelle
+IQR,TrainingHoursLastYear,15,0.15,IQR x1.5,winsorisation après vérification manuelle
+IQR,JobLevel,0,0.0,IQR x1.5,winsorisation après vérification manuelle
+IQR,JobSatisfaction,500,5.0,IQR x1.5,winsorisation après vérification manuelle
+IQR,WorkLifeBalance,0,0.0,IQR x1.5,winsorisation après vérification manuelle
+IQR,PerformanceRating,0,0.0,IQR x1.5,winsorisation après vérification manuelle
+Isolation Forest,multivarié (9 variables),500,5.0,"contamination=0.05, random_state=42",investigation ; suppression uniquement si erreur avérée
+LOF,multivarié (9 variables),500,5.0,"n_neighbors=20, contamination=0.05",investigation ; suppression uniquement si erreur avérée
