@@ -47,7 +47,7 @@ Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictio
 |---|---|
 | **1. Compréhension métier** | §1 ci-dessus, [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md) |
 | **2. Compréhension des données** | [`DISCOVERY.md`](DISCOVERY.md), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb), [`results/descriptive_stats.csv`](results/descriptive_stats.csv), figures `01` à `08` |
-| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) |
+| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) |
 | **4. Modélisation** | [`scripts/train_pipeline.py`](scripts/train_pipeline.py) (pipeline du guide), [`scripts/train_models.py`](scripts/train_models.py) + [`src/models.py`](src/models.py) (analyse étendue), [`results/cv_summary.csv`](results/cv_summary.csv), figures `09` à `16` |
 | **5. Évaluation** | [`results/model_comparison.csv`](results/model_comparison.csv), `results/*.json`, [`tests/`](tests/), figures `17` à `23` |
 | **6. Déploiement et surveillance** | Modèles `joblib` dans `models/`, application Streamlit dans `app/` ; surveillance et concept drift discutés en limite (§9) |
@@ -68,7 +68,10 @@ Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à a
 | `scripts/train_pipeline.py` | Pipeline du guide : 6 modèles imposés, StratifiedKFold(5), artefacts JSON |
 | `scripts/train_models.py` | Analyse étendue : 9 modèles, recherche AP, bootstrap, optimisation du seuil |
 | `scripts/run_unsupervised.py` | KMeans, PCA, agglomératif, DBSCAN |
+| [`scripts/run_outliers.py`](scripts/run_outliers.py) | Détection des outliers : IQR, Z-score, Isolation Forest, LOF → `results/outliers_report.csv` et figure 36 |
 | `scripts/generate_figures.py`, `scripts/generate_notebooks.py` | Génération des livrables graphiques / notebooks |
+
+Analyse des outliers détaillée dans [`docs/OUTLIERS.md`](docs/OUTLIERS.md), avec la comparaison graphique [`reports/figures/36_outliers_methodes.png`](reports/figures/36_outliers_methodes.png).
 
 ---
 
@@ -155,6 +158,7 @@ python scripts/run_preprocessing.py   # données traitées + preprocessor.joblib
 python scripts/train_pipeline.py      # pipeline du guide (6 modèles)
 python scripts/train_models.py        # analyse étendue (9 modèles, plus long)
 python scripts/run_unsupervised.py    # clustering
+python scripts/run_outliers.py        # détection avancée des outliers
 pytest tests -q                       # suite de tests
 streamlit run app/Home.py             # application web
 ```
@@ -173,7 +177,7 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | Pipeline end-to-end, ≥ 10 000 lignes, ≥ 10 attributs | ✅ |
 | Types et échelles de mesure, one-hot / ordinal, Z-score | ✅ [`docs/data_dictionary.md`](docs/data_dictionary.md) |
 | Outliers IQR + écrêtage | ✅ dataset + notebooks |
-| Outliers Z-score, Isolation Forest, LOF | ❌ non implémentés |
+| Outliers Z-score, Isolation Forest, LOF | ✅ [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`scripts/run_outliers.py`](scripts/run_outliers.py), figure [`36`](reports/figures/36_outliers_methodes.png) |
 | Similarités euclidienne / Manhattan | ✅ KNN, KMeans |
 | Similarité cosinus, Minkowski | ❌ non testées |
 | Classification supervisée, CV 5 plis, métriques | ✅ |
@@ -207,10 +211,10 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 ├── data/processed/            # .gitkeep + données générées (ignorées)
 ├── notebooks/                 # 4 notebooks
 ├── src/                       # preprocessing, models, evaluation, stats_tests, unsupervised…
-├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised…
+├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised, run_outliers…
 ├── models/                    # .gitkeep + .joblib générés (ignorés)
 ├── results/                   # CSV versionnés + JSON générés (ignorés)
-├── reports/figures/           # 23 figures
+├── reports/figures/           # 36 figures
 ├── docs/                      # guide, dictionnaire de données, figures
 ├── app/                       # application Streamlit (interface)
 └── tests/                     # suite pytest
