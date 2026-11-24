@@ -45,6 +45,11 @@ NOMINAL_COLS = ["Department"]
 
 FEATURE_COLS = NUMERIC_COLS + ORDINAL_COLS + BINARY_COLS + NOMINAL_COLS
 
+# Alias de compatibilité avec les tests et les autres modules
+NUMERICAL_FEATURES = NUMERIC_COLS + ORDINAL_COLS
+
+CATEGORICAL_FEATURES = NOMINAL_COLS + BINARY_COLS
+
 # Plages de valeurs plausibles (une valeur hors plage est traitée comme manquante)
 VALID_RANGES: dict[str, tuple[float, float]] = {
     "Age": (18, 70),
