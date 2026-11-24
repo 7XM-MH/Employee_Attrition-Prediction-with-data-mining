@@ -21,7 +21,7 @@ Il contient 10 000 lignes et 14 colonnes. La cible reelle s'appelle `Attrition` 
 
 La classe positive est `Yes`, qui represente environ 9 % des lignes. Le jeu est synthetique, sans valeurs manquantes ni doublons selon la decouverte du projet. Les colonnes `Gender`, `MaritalStatus`, `RemoteWork` et `JobRole` mentionnees dans certains exemples de specification ne sont pas dans ce CSV : ne pas les ajouter au formulaire ou au modele sans changement valide du jeu de donnees et de son contrat.
 
-Le depot contient deja `src/preprocessing.py`, `src/models.py`, `src/evaluation.py`, `scripts/train_pipeline.py` et les cinq pages sous `app/pages/`. Le script d'entrainement est deja implemente ; `models/` et `results/` ne contenaient toutefois pas de modele ni de resultats lors de la verification. Les notebooks presents sont vides. `DISCOVERY.md` contient une synthese utile, mais certaines de ses indications d'etat peuvent devenir obsoletes : verifiez les fichiers actuels avant de vous y fier.
+Le depot contient desormais `src/preprocessing.py`, `src/models.py`, `src/evaluation.py`, `scripts/train_pipeline.py`, `scripts/train_models.py`, `scripts/run_unsupervised.py`, `scripts/generate_figures.py` et les cinq pages sous `app/pages/`. Cinq notebooks sont presents et non vides : `notebooks/01_eda_and_cleaning.ipynb`, `notebooks/02_preprocessing_encoding.ipynb`, `notebooks/03_model_training_evaluation.ipynb`, `notebooks/04_optimization.ipynb`, `notebooks/05_metrics_analysis.ipynb`. Le projet documente neuf modeles supervises (Zero-R, six modeles du cours et deux extensions) et quatre methodes non supervisées. Les CSV de resultats et les 35 figures sont versionnes ; les `.joblib`, `results/*.json` et `data/processed/*.csv` sont generes puis ignorés par Git (voir [`results/README_resultats.md`](../results/README_resultats.md)). La suite de tests comporte 40 tests verts. `DISCOVERY.md` contient une synthese utile, mais certaines indications d'etat peuvent devenir obsoletes : verifiez les fichiers actuels avant de vous y fier.
 
 ## 2. Contrats d'integration a respecter
 
@@ -45,14 +45,14 @@ Le point d'entree d'entrainement est :
 scripts/train_pipeline.py
 ```
 
-Le pipeline doit rester classique et interpretable au niveau des methodes du cours : Zero-R (`DummyClassifier`), K-NN, arbre de decision, foret aleatoire, Naive Bayes et SVM. N'utiliser ni reseau de neurones, ni LLM comme modele predictif.
+Le pipeline doit rester classique et interpretable au niveau des methodes du cours : Zero-R (`DummyClassifier`), K-NN, arbre de decision, foret aleatoire, Naive Bayes et SVM. L'analyse etendue ajoute la regression logistique et le Gradient Boosting, soit neuf modeles documentes ; `XGBoost` reste optionnel si la dependance est installee. N'utiliser ni reseau de neurones, ni LLM comme modele predictif.
 
 ### Ordre des operations
 
 1. Verifier que le CSV existe, que les colonnes attendues sont presentes, que `Attrition` contient uniquement `No`/`Yes`, et que les classes ne sont pas vides. Emettre un message explicite en cas de schema invalide.
 2. Separer d'abord les donnees en apprentissage et test avec `train_test_split(..., stratify=y, random_state=...)`. Conserver le test hors de tout ajustement, choix d'hyperparametres et choix du modele.
 3. Creer un `ColumnTransformer` : mise a l'echelle numerique avec `StandardScaler`, encodage categoriel avec `OneHotEncoder(handle_unknown="ignore")`. Garder ce transformeur dans une `Pipeline` avec le classifieur.
-4. Ajuster la recherche d'hyperparametres uniquement sur l'ensemble d'apprentissage avec `StratifiedKFold(n_splits=5, shuffle=True, random_state=...)` et une metrique adaptee a la classe minoritaire (F1 pour `Yes`; ROC-AUC peut etre rapporte en complement).
+4. Ajuster la recherche d'hyperparametres uniquement sur l'ensemble d'apprentissage avec `StratifiedKFold(n_splits=5, shuffle=True, random_state=...)` et une metrique adaptee a la classe minoritaire : **F1 moyen CV** pour le pipeline du guide, **AP moyenne CV** pour l'analyse etendue. ROC-AUC, PR-AUC et MCC sont rapportes en complement ; voir [`docs/METRIQUES.md`](METRIQUES.md).
 5. Inclure Zero-R comme baseline. Enregistrer ses resultats de validation croisee aussi, ou indiquer explicitement qu'une valeur CV n'a pas ete calculee ; ne pas la presenter comme un score nul.
 6. Selectionner le meilleur modele a partir d'un score de validation croisee calcule sur l'apprentissage (ou d'une regle documentee et definie avant de consulter le test). Evaluer ensuite le modele retenu sur le test. Choisir le gagnant d'apres le F1 du test puis annoncer ce meme test comme evaluation finale introduit un biais de selection.
 7. Calculer les metriques du test et sauvegarder le pipeline complet, sans re-entrainer le gagnant sur le test.
@@ -66,7 +66,7 @@ Le script actuel vise les fichiers suivants, que les pages lisent sous ces noms 
 | Chemin | Utilisation par l'application |
 |---|---|
 | `models/best_model.joblib` | Modele charge par defaut pour prediction individuelle et par lot |
-| `models/ZeroR_pipeline.joblib` et `<NomModele>_pipeline.joblib` | Pipelines sauvegardes par modele, disponibles notamment pour le comparatif |
+| `models/ZeroR_pipeline.joblib` et les pipelines nommes d'apres chaque modele, par exemple `models/RandomForest_pipeline.joblib` | Pipelines sauvegardes par modele, disponibles notamment pour le comparatif |
 | `results/metrics.json` | Dictionnaire `{nom_modele: {accuracy, precision, recall, f1, roc_auc}}` pour la page de comparaison |
 | `results/roc_data.json` | Dictionnaire `{nom_modele: {fpr, tpr, auc}}` pour tracer les courbes ROC |
 | `results/confusion_matrices.json` | Dictionnaire `{nom_modele: [[TN, FP], [FN, TP]]}` avec l'ordre de classes explicite |
@@ -78,6 +78,12 @@ Le script actuel vise les fichiers suivants, que les pages lisent sous ces noms 
 Conserver les cles de modele (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) et les noms de champs ci-dessus : `app/pages/3_Performance_Modeles.py` les utilise directement. Les pages de facteurs consultent les importances et le modele sauvegarde. Si un nouveau fichier de metadonnees est ajoute, documenter son schema et son consommateur dans l'application.
 
 La page d'accueil peut avoir besoin du nom et du critere de selection du meilleur modele ; ne pas l'inferer a partir d'une metrique de test si le choix a ete fait sur la CV. Enregistrer cette information dans un petit artefact explicite, ou la determiner avec la meme regle CV documentee. Les nombres NumPy doivent etre convertis en types Python natifs avant serialisation JSON.
+
+### Critere de selection et seuil de decision
+
+- Le pipeline du guide (`scripts/train_pipeline.py`) selectionne sur le **F1 moyen CV** avec `StratifiedKFold(5)` ; le modele retenu est `DecisionTree` (F1 CV `0,1365 ± 0,0230`, F1 test `0,1230`, ROC-AUC `0,5406`).
+- L'analyse etendue (`scripts/train_models.py`) selectionne sur l'**AP moyenne CV** ; le meilleur modele est `Gradient Boosting` (AP CV `0,1729`), avec un seuil optimal d'environ `0,1176`.
+- Au seuil `0,5`, tous les modeles ont un F1 de `0` : avec 9 % de classe positive, aucun `Yes` n'est predit. Ne pas melanger les valeurs a seuil `0,5` (accuracy `0,9095`) avec les valeurs au seuil optimise (accuracy `0,7605`, F1 `0,2527`). Definitions et regles de citation : [`docs/METRIQUES.md`](METRIQUES.md).
 
 ## 5. Connexion aux pages Streamlit
 
@@ -107,22 +113,24 @@ Le pied de page et les resultats doivent rappeler que les donnees sont synthetiq
    .\.venv\Scripts\python.exe .\scripts\train_pipeline.py
    ```
 
-5. **Verifier le resultat** : confirmer que `best_model.joblib`, les six pipelines et les JSON attendus existent, qu'ils se chargent, que leurs cles sont coherentes, et que `predict_proba` renvoie une probabilite finie pour `Yes`.
+   Pour l'analyse etendue, lancer `python scripts/train_models.py` ; pour le clustering, `python scripts/run_unsupervised.py`. L'inventaire complet des fichiers generes et leurs producteurs est dans [`results/README_resultats.md`](../results/README_resultats.md).
+
+5. **Verifier le resultat** : confirmer que `best_model.joblib`, les six pipelines du guide (et les artefacts des neuf modeles pour l'analyse etendue) et les JSON attendus existent, qu'ils se chargent, que leurs cles sont coherentes, et que `predict_proba` renvoie une probabilite finie pour `Yes`.
 6. **Tester l'integration** : lancer depuis la racine :
 
    ```bash
    streamlit run app/Home.py
-   pytest
+   python -m pytest tests -q
    ```
 
-   Verifier manuellement une prediction individuelle, le comparatif des six modeles, les graphiques de facteurs et un CSV de lot contenant les 12 colonnes. Tester aussi le comportement lorsque les artefacts sont absents.
+   La suite doit afficher `40 passed`. Verifier manuellement une prediction individuelle, le comparatif des six modeles, les graphiques de facteurs et un CSV de lot contenant les 12 colonnes. Tester aussi le comportement lorsque les artefacts sont absents.
 7. **Mettre a jour la documentation** si les noms de colonnes, l'algorithme de selection, les metriques ou la structure d'artefacts changent.
 
 Les dependances du projet sont declarees dans `requirements.txt`. Installer ou mettre a jour une dependance dans l'environnement virtuel du projet uniquement si necessaire ; garder les versions compatibles avec Python 3.10+ et Streamlit Community Cloud.
 
 ## 7. Points de vigilance releves dans le depot
 
-- Plusieurs avertissements de pages pointent encore vers `python src/train.py`, qui n'est pas le script d'entrainement de ce depot. La commande actuelle est `python scripts/train_pipeline.py`; corriger les messages UI lorsqu'on travaille sur ces pages.
+- Toute reference a `python src/train.py` est obsolete : la commande canonique est `python scripts/train_pipeline.py`. Les messages d'interface concernes seront corriges par le lot dedie ; ce lot documentaire ne modifie pas `app/**`.
 - `src/app.py` est un lanceur qui demarre `app/Home.py` via Streamlit. Pour respecter le lancement local exige par le cours, tester directement `streamlit run app/Home.py`.
 - Les references a `train.csv`/`test.csv` dans des instructions generiques ne correspondent pas aux fichiers presents. Le script cree actuellement `data/processed/test_set.csv` a partir du split du CSV source.
 - La liste de features du modele n'inclut ni `EmployeeID` ni `Attrition`. La prediction par lot doit suivre la meme regle que la prediction individuelle.

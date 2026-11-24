@@ -6,7 +6,7 @@
 > [!WARNING]
 > Projet **académique et fictif**. Les données sont synthétiques. Aucune prédiction ne doit être utilisée pour une décision RH réelle.
 
-> Pilotage : [plan de projet](docs/PLAN_PROJET.md) · [convention de contribution](CONTRIBUTING.md).
+> Pilotage : [plan de projet](docs/PLAN_PROJET.md) · [convention de contribution](CONTRIBUTING.md) · [métriques](docs/METRIQUES.md) · [inventaire des résultats](results/README_resultats.md).
 
 ---
 
