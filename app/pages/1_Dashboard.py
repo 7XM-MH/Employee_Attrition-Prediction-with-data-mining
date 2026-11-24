@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from scipy import stats
 
 # Ensure project root is on sys.path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -116,10 +117,56 @@ if total_filtered == 0:
 # ── Tabs ───────────────────────────────────────────────────────────────
 selected_section = st.radio(
     "Section d'analyse",
-    ["Distributions", "Facteurs catégoriels", "Corrélations", "Taux d'attrition", "Statistiques", "Données filtrées"],
+    ["Contrôle qualité", "Distributions", "Facteurs catégoriels", "Corrélations", "Taux d'attrition", "Statistiques", "Tests statistiques", "Données filtrées"],
     horizontal=True,
     label_visibility="collapsed",
 )
+
+# ── Contrôle qualité des données ────────────────────────────────────────
+if selected_section == "Contrôle qualité":
+    st.markdown("#### 🔎 Audit qualité de la base brute")
+
+    duplicate_rows = int(raw_df.duplicated().sum())
+    duplicate_ids = int(raw_df[ID_COL].duplicated().sum()) if ID_COL in raw_df.columns else 0
+    missing = raw_df.isna().sum()
+    missing = missing[missing > 0].sort_values(ascending=False)
+
+    q1, q2, q3, q4 = st.columns(4)
+    with q1:
+        kpi_card("Lignes", f"{len(raw_df):,}", border_color=PRIMARY_COLOR)
+    with q2:
+        kpi_card("Doublons complets", f"{duplicate_rows:,}", delta="Lignes identiques", border_color=COLOR_WARN)
+    with q3:
+        kpi_card("Doublons d'ID", f"{duplicate_ids:,}", delta=ID_COL, border_color=COLOR_WARN)
+    with q4:
+        kpi_card("Valeurs manquantes", f"{int(raw_df.isna().sum().sum()):,}", border_color=COLOR_YES)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("##### Types de données")
+        dtype_df = pd.DataFrame({
+            "Colonne": raw_df.columns,
+            "Type": [str(dtype) for dtype in raw_df.dtypes],
+        })
+        st.dataframe(dtype_df, use_container_width=True, hide_index=True)
+    with c2:
+        st.markdown("##### Valeurs manquantes par colonne")
+        if missing.empty:
+            st.success("Aucune valeur manquante détectée dans le fichier brut.")
+        else:
+            missing_df = missing.rename("Nombre").reset_index(names="Colonne")
+            fig_missing = px.bar(missing_df, x="Colonne", y="Nombre", title="Distribution des valeurs manquantes", template=PLOTLY_TEMPLATE)
+            st.plotly_chart(fig_missing, use_container_width=True)
+
+    st.markdown("##### Plages observées")
+    numeric_cols = raw_df.select_dtypes(include=[np.number]).columns
+    range_df = pd.DataFrame({
+        "Variable": numeric_cols,
+        "Minimum": [raw_df[c].min() for c in numeric_cols],
+        "Maximum": [raw_df[c].max() for c in numeric_cols],
+        "Médiane": [raw_df[c].median() for c in numeric_cols],
+    })
+    st.dataframe(range_df, use_container_width=True, hide_index=True)
 
 # ── Tab 1: Numerical distributions ─────────────────────────────────────
 if selected_section == "Distributions":
@@ -142,8 +189,7 @@ if selected_section == "Distributions":
         color=TARGET,
         barmode="overlay",
         color_discrete_map=COLOR_MAP,
-        nbins=35,
-        marginal="box",
+        nbins=24,
         title=f"Distribution & Boîte à moustaches de <b>{selected_num}</b>",
         labels={selected_num: selected_num, "count": "Nombre d'employés", TARGET: "Attrition"},
         opacity=0.75,
@@ -166,7 +212,7 @@ if selected_section == "Distributions":
                 color=TARGET,
                 barmode="overlay",
                 color_discrete_map=COLOR_MAP,
-                nbins=22,
+                nbins=16,
                 title=f"<b>{feat}</b>",
                 opacity=0.75,
                 height=260,
@@ -349,6 +395,72 @@ if selected_section == "Statistiques":
         use_container_width=True,
         hide_index=True,
     )
+
+# ── Tests d'hypothèses statistiques ────────────────────────────────────
+if selected_section == "Tests statistiques":
+    st.markdown("#### 🧪 Validation statistique formelle (α = 0,05)")
+    st.caption("Les tests ci-dessous utilisent les données brutes du filtre latéral; les conclusions sont associatives, pas causales.")
+
+    test_tabs = st.tabs(["Shapiro-Wilk", "Chi-deux", "ANOVA / Kruskal-Wallis", "Mann-Whitney"])
+
+    with test_tabs[0]:
+        st.markdown("**Test de normalité — H0 : la distribution suit une loi normale**")
+        shapiro_rows = []
+        for feat in NUMERICAL_FEATURES:
+            values = pd.to_numeric(filtered[feat], errors="coerce").dropna()
+            sample = values.sample(min(5000, len(values)), random_state=42) if len(values) > 5000 else values
+            if len(sample) >= 3:
+                stat, p = stats.shapiro(sample)
+                shapiro_rows.append({"Variable": feat, "Statistique W": stat, "p-value": p, "Décision": "Rejet H0" if p < 0.05 else "H0 non rejetée"})
+        st.dataframe(pd.DataFrame(shapiro_rows).style.format({"Statistique W": "{:.4f}", "p-value": "{:.2e}"}), use_container_width=True, hide_index=True)
+
+    with test_tabs[1]:
+        st.markdown("**Test du chi-deux d'indépendance — H0 : aucune association avec Attrition**")
+        chi_rows = []
+        for feat in CATEGORICAL_FEATURES:
+            table = pd.crosstab(filtered[feat], filtered[TARGET])
+            if table.shape[0] > 1 and table.shape[1] > 1:
+                stat, p, dof, _ = stats.chi2_contingency(table, correction=False)
+                n = table.to_numpy().sum()
+                r, c = table.shape
+                v = np.sqrt(stat / (n * (min(r - 1, c - 1))))
+                chi_rows.append({"Variable": feat, "Chi-deux": stat, "ddl": dof, "p-value": p, "V de Cramér": v, "Décision": "Association" if p < 0.05 else "Aucune association"})
+        st.dataframe(pd.DataFrame(chi_rows).style.format({"Chi-deux": "{:.3f}", "p-value": "{:.2e}", "V de Cramér": "{:.3f}"}), use_container_width=True, hide_index=True)
+
+    with test_tabs[2]:
+        st.markdown("**Comparaison des moyennes/rangs selon Attrition**")
+        para_rows, kw_rows = [], []
+        groups = [g[NUMERICAL_FEATURES].dropna().to_numpy().ravel() for _, g in filtered.groupby(TARGET)]
+        for feat in NUMERICAL_FEATURES:
+            samples = [pd.to_numeric(g[feat], errors="coerce").dropna().to_numpy() for _, g in filtered.groupby(TARGET) if len(g[feat].dropna()) > 1]
+            if len(samples) == 2:
+                try:
+                    a_stat, a_p = stats.f_oneway(*samples)
+                    para_rows.append({"Variable": feat, "F ANOVA": a_stat, "p-value": a_p, "Décision": "Moyennes différentes" if a_p < 0.05 else "Non significatif"})
+                except (ValueError, RuntimeError):
+                    pass
+                try:
+                    k_stat, k_p = stats.kruskal(*samples)
+                    kw_rows.append({"Variable": feat, "H Kruskal-Wallis": k_stat, "p-value": k_p, "Décision": "Distributions différentes" if k_p < 0.05 else "Non significatif"})
+                except (ValueError, RuntimeError):
+                    pass
+        st.markdown("##### ANOVA")
+        st.dataframe(pd.DataFrame(para_rows).style.format({"F ANOVA": "{:.3f}", "p-value": "{:.2e}"}), use_container_width=True, hide_index=True)
+        st.markdown("##### Kruskal-Wallis")
+        st.dataframe(pd.DataFrame(kw_rows).style.format({"H Kruskal-Wallis": "{:.3f}", "p-value": "{:.2e}"}), use_container_width=True, hide_index=True)
+
+    with test_tabs[3]:
+        st.markdown("**Mann-Whitney U — comparaison des rangs Restés / Partis**")
+        mw_rows = []
+        no = filtered[filtered[TARGET] == "No"]
+        yes = filtered[filtered[TARGET] == "Yes"]
+        for feat in NUMERICAL_FEATURES:
+            x = pd.to_numeric(no[feat], errors="coerce").dropna()
+            y = pd.to_numeric(yes[feat], errors="coerce").dropna()
+            if len(x) > 0 and len(y) > 0:
+                stat, p = stats.mannwhitneyu(x, y, alternative="two-sided")
+                mw_rows.append({"Variable": feat, "U": stat, "p-value": p, "Décision": "Distributions différentes" if p < 0.05 else "Non significatif"})
+        st.dataframe(pd.DataFrame(mw_rows).style.format({"U": "{:.1f}", "p-value": "{:.2e}"}), use_container_width=True, hide_index=True)
 
 # ── Tab 6: Filtered Raw Data ───────────────────────────────────────────
 if selected_section == "Données filtrées":

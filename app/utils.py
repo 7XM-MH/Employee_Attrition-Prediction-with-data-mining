@@ -18,22 +18,22 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 CSS_PATH = Path(__file__).resolve().parent / "style.css"
 
 # ── Design Tokens & Theming ────────────────────────────────────────────
-PRIMARY_COLOR = "#4F46E5"        # Indigo
-SECONDARY_COLOR = "#06B6D4"      # Cyan
-COLOR_NO = "#10B981"             # Emerald (Stayed / Low risk)
-COLOR_YES = "#EF4444"            # Rose / Red (Left / High risk)
-COLOR_WARN = "#F59E0B"           # Amber (Moderate risk)
+PRIMARY_COLOR = "#5B67F1"        # Royal periwinkle
+SECONDARY_COLOR = "#34BFA3"      # Sea green
+COLOR_NO = "#20B486"             # Emerald (Stayed / Low risk)
+COLOR_YES = "#E85D75"            # Coral rose (Left / High risk)
+COLOR_WARN = "#F2A93B"           # Amber (Moderate risk)
 COLOR_MAP = {"No": COLOR_NO, "Yes": COLOR_YES}
 
 PLOTLY_TEMPLATE = "plotly_white"
 PLOTLY_COLORWAY = [
-    "#4F46E5",  # Indigo
-    "#06B6D4",  # Cyan
-    "#10B981",  # Emerald
-    "#F59E0B",  # Amber
-    "#EC4899",  # Pink
-    "#8B5CF6",  # Purple
-    "#3B82F6",  # Blue
+    "#5B67F1",  # Periwinkle
+    "#34BFA3",  # Sea green
+    "#E85D75",  # Coral
+    "#F2A93B",  # Amber
+    "#7C5CE7",  # Violet
+    "#4BA3C7",  # Sky
+    "#97A4C2",  # Mist blue
     "#64748B",  # Slate
 ]
 
@@ -66,11 +66,18 @@ def get_plotly_template() -> str:
 
 
 # ── CSS Loading ────────────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def _read_app_css() -> str:
+    """Read the stylesheet once per process instead of every Streamlit rerun."""
+    if CSS_PATH.exists():
+        return CSS_PATH.read_text(encoding="utf-8")
+    return ""
+
+
 def load_css() -> None:
     """Load custom CSS from app/style.css and inject into Streamlit."""
-    if CSS_PATH.exists():
-        with open(CSS_PATH, "r", encoding="utf-8") as f:
-            css = f.read()
+    css = _read_app_css()
+    if css:
         if st.session_state.get("dark_mode", False):
             css += """
             :root {
@@ -379,6 +386,30 @@ def init_session_state(df: Optional[pd.DataFrame] = None) -> None:
             st.session_state.global_income_range = (2000, 20000)
 
 
+@st.cache_data(show_spinner=False)
+def filter_employee_data(
+    df: pd.DataFrame,
+    departments: Tuple[str, ...],
+    overtime: str,
+    age_range: Tuple[int, int],
+    income_range: Tuple[int, int],
+) -> pd.DataFrame:
+    """Apply sidebar filters once and reuse the cached result across reruns."""
+    filtered_df = df
+    if departments:
+        filtered_df = filtered_df[filtered_df["Department"].isin(departments)]
+    if overtime == "Oui":
+        filtered_df = filtered_df[filtered_df["OverTime"] == "Yes"]
+    elif overtime == "Non":
+        filtered_df = filtered_df[filtered_df["OverTime"] == "No"]
+    return filtered_df[
+        (filtered_df["Age"] >= age_range[0])
+        & (filtered_df["Age"] <= age_range[1])
+        & (filtered_df["MonthlyIncome"] >= income_range[0])
+        & (filtered_df["MonthlyIncome"] <= income_range[1])
+    ].copy()
+
+
 def render_sidebar(df: Optional[pd.DataFrame] = None, show_filters: bool = True) -> Optional[pd.DataFrame]:
     """Render consistent sidebar branding, optional global filters, and footer."""
     init_session_state(df)
@@ -449,21 +480,13 @@ def render_sidebar(df: Optional[pd.DataFrame] = None, show_filters: bool = True)
                 help="Sélectionner l'intervalle de salaire mensuel",
             )
 
-        # Apply filters to dataframe
-        if st.session_state.global_departments:
-            filtered_df = filtered_df[filtered_df["Department"].isin(st.session_state.global_departments)]
-
-        if st.session_state.global_overtime == "Oui":
-            filtered_df = filtered_df[filtered_df["OverTime"] == "Yes"]
-        elif st.session_state.global_overtime == "Non":
-            filtered_df = filtered_df[filtered_df["OverTime"] == "No"]
-
-        filtered_df = filtered_df[
-            (filtered_df["Age"] >= st.session_state.global_age_range[0])
-            & (filtered_df["Age"] <= st.session_state.global_age_range[1])
-            & (filtered_df["MonthlyIncome"] >= st.session_state.global_income_range[0])
-            & (filtered_df["MonthlyIncome"] <= st.session_state.global_income_range[1])
-        ]
+        filtered_df = filter_employee_data(
+            filtered_df,
+            tuple(st.session_state.global_departments),
+            st.session_state.global_overtime,
+            tuple(st.session_state.global_age_range),
+            tuple(st.session_state.global_income_range),
+        )
 
     render_sidebar_footer()
     return filtered_df

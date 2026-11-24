@@ -33,6 +33,11 @@ from sklearn.preprocessing import KBinsDiscretizer, OneHotEncoder
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
+try:
+    from xgboost import XGBClassifier
+except ImportError:
+    XGBClassifier = None
+
 from src.preprocessing import (
     BINARY_COLS, FEATURE_COLS, NOMINAL_COLS, NUMERIC_COLS, ORDINAL_COLS,
     build_preprocessor,
@@ -54,6 +59,8 @@ REFIT = "ap"
 
 BASELINE = "Zero-R"
 EXTENSIONS = ["Régression logistique", "Gradient Boosting"]
+if XGBClassifier is not None:
+    EXTENSIONS.append("XGBoost")
 
 
 def slug(name: str) -> str:
@@ -206,6 +213,25 @@ def get_searches(n_jobs: int = 1) -> dict:
         },
         **kw,
     )
+    if XGBClassifier is not None:
+        searches["XGBoost"] = GridSearchCV(
+            Pipeline([
+                ("prep", _tree_preprocessor()),
+                ("clf", XGBClassifier(
+                    objective="binary:logistic",
+                    eval_metric="logloss",
+                    random_state=RANDOM_STATE,
+                    n_jobs=-1,
+                )),
+            ]),
+            {
+                "clf__n_estimators": [100, 200],
+                "clf__max_depth": [2, 3, 5],
+                "clf__learning_rate": [0.03, 0.1],
+                "clf__subsample": [0.8, 1.0],
+            },
+            **kw,
+        )
     return searches
 
 
