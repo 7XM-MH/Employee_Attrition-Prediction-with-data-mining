@@ -1,7 +1,6 @@
-"""Smoke test rapide : python test.py"""
-from scripts.run_preprocessing import main
+import kagglehub
 
-if __name__ == "__main__":
-    r = main()
-    assert r["n_features_out"] == 18, r["n_features_out"]
-    print("OK - prétraitement fonctionnel")
+# Download latest version
+path = kagglehub.dataset_download("personacarved/employee-attrition-dataset")
+
+print("Path to dataset files:", path)
