@@ -117,7 +117,7 @@ Le pied de page et les resultats doivent rappeler que les donnees sont synthetiq
    .\.venv\Scripts\python.exe .\scripts\train_pipeline.py
    ```
 
-   Pour l'analyse etendue, lancer `python scripts/train_models.py` ; pour le clustering, `python scripts/run_unsupervised.py` puis `python scripts/run_unsupervised_advanced.py` ; pour les outliers, `python scripts/run_outliers.py` ; pour l'explicabilité, `python scripts/run_explainability.py`. L'inventaire complet des fichiers generes et leurs producteurs est dans [`results/README_resultats.md`](../results/README_resultats.md).
+   Pour l'analyse etendue, lancer `python scripts/train_models.py` ; pour le clustering, `python scripts/run_unsupervised.py` puis `python scripts/run_unsupervised_advanced.py` ; pour les outliers, `python scripts/run_outliers.py` ; pour l'explicabilité, `python scripts/run_explainability.py` ; pour le rapport scientifique, `python scripts/generate_rapport.py`, qui produit `docs/Rapport_MiniProject.pdf` et `docs/Rapport_Projet.pdf` depuis la source versionnee `docs/rapport/rapport.md`. L'inventaire complet des fichiers generes et leurs producteurs est dans [`results/README_resultats.md`](../results/README_resultats.md).
 
 5. **Verifier le resultat** : confirmer que `best_model.joblib`, les six pipelines du guide (et les artefacts des quatorze modeles pour l'analyse etendue) et les JSON attendus existent, qu'ils se chargent, que leurs cles sont coherentes, et que `predict_proba` renvoie une probabilite finie pour `Yes`.
 6. **Tester l'integration** : lancer depuis la racine :

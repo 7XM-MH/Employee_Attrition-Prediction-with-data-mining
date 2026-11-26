@@ -76,7 +76,7 @@ Le cycle est itératif : les résultats du lot 5 peuvent conduire à réajuster 
 | Métriques reporting | F1, AP, ROC-AUC, matrices de confusion, IC bootstrap |
 | Suite de tests | `python -m pytest tests -q` → **68 passed** (tout écart doit être expliqué dans la PR) |
 | Livrables graphiques | 5 notebooks, 42 figures versionnées |
-| Modèles | 9 modèles supervisés (dont Zero-R), 4 méthodes non supervisées (KMeans, PCA, agglomératif, DBSCAN) |
+| Modèles | 14 modèles supervisés (dont Zero-R), 7 méthodes non supervisées (KMeans, PCA, agglomératif, DBSCAN, K-Medoids, DIANA, cosinus) |
 | Traçabilité | 1 branche `feature/lotN-*`, 1 commit, 1 PR par lot, revue de `Anwar77-b` |
 | Anonymat | 0 nom, prénom, matricule ou adresse personnelle dans les fichiers suivis |
 
@@ -121,9 +121,10 @@ Le numérotage des sections 4 et 7 était indicatif. Les prompts exécutés par 
 | 1 | `feature/lot1-metriques-guide` | #10 (mergée) | `docs/METRIQUES.md`, `results/README_resultats.md`, `docs/GUIDE_IMPLEMENTATION_MODELE.md` | Anwar77-b |
 | 2 | `feature/lot2-outliers-avances` | #11 (mergée) | `src/outliers.py`, `scripts/run_outliers.py`, `docs/OUTLIERS.md`, `tests/test_outliers.py` | Anwar77-b |
 | 3 | `feature/lot3-clustering-avance` | #12 (mergée) | `src/unsupervised.py`, `scripts/run_unsupervised_advanced.py`, `docs/CLUSTERING_AVANCE.md` | Anwar77-b |
-| 4 | `feature/lot4-modeles-explicabilite` | PR à ouvrir | `src/models.py`, `src/explainability.py`, `scripts/train_pipeline.py`, `scripts/run_explainability.py`, `tests/test_models_extended.py`, `tests/test_explainability.py` | Anwar77-b |
+| 4 | `feature/lot4-modeles-explicabilite` | #13 (mergée) | `src/models.py`, `src/explainability.py`, `scripts/train_pipeline.py`, `scripts/run_explainability.py`, `tests/test_models_extended.py`, `tests/test_explainability.py` | Anwar77-b |
+| 5 | `feature/lot5-rapport-scientifique` | PR ouverte dans cette livraison | `docs/rapport/rapport.md`, `scripts/generate_rapport.py`, `docs/Rapport_MiniProject.pdf`, `docs/Rapport_Projet.pdf`, `README.md` | Anwar77-b |
 
-Le rapport `docs/Rapport_Projet.pdf` est présent sur `upstream/main` depuis le commit `9233737` ; la remarque de l'évaluateur (-0,70 pt) portait sur le commit `831b988`, antérieur à ce rapport.
+Le rapport `docs/Rapport_Projet.pdf` était présent sur `upstream/main` depuis le commit `9233737` ; la remarque de l'évaluateur (-0,70 pt) portait sur le commit `831b988`, antérieur à ce rapport. Le lot 5 le remplace par un rapport scientifique régénéré et versionné, disponible sous le nom attendu `docs/Rapport_MiniProject.pdf` et sous l'alias `docs/Rapport_Projet.pdf`. Le template `docs/Rapport_MiniProject_apercu.pdf` est conservé sans modification.
 
 ---
 
@@ -139,7 +140,7 @@ Grille reçue (situation avant ce lot) :
 | Documentation | 0,1 / 3 | objectif : 3 / 3 grâce à ce plan et au rapport |
 | **Note globale** | **6,5 / 20** | pénalité de **-0,70 pt** pour rapport PDF scientifique manquant |
 
-Objectif : **16 / 20 au maximum sans l'interface**, **20 / 20 avec l'interface** livrée par l'autre membre. Le rapport `docs/Rapport_Projet.pdf` est désormais présent sur `upstream/main` (commit `9233737`) ; la levée effective de la pénalité reste à confirmer par le professeur.
+Objectif : **16 / 20 au maximum sans l'interface**, **20 / 20 avec l'interface** livrée par l'autre membre. Le rapport scientifique régénéré par le lot 5 est livré sous `docs/Rapport_MiniProject.pdf` et `docs/Rapport_Projet.pdf` ; la levée effective de la pénalité reste à confirmer par le professeur.
 
 ---
 
