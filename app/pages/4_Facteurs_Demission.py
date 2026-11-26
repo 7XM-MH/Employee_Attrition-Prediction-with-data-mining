@@ -20,7 +20,7 @@ st.set_page_config(
 from app.utils import (
     load_css,
     load_data,
-    load_model,
+    load_bundle,
     load_json,
     get_plotly_template,
     kpi_card,
@@ -150,71 +150,79 @@ if selected_section == "Importance des variables":
 # ── Tab 2: SHAP Analysis ───────────────────────────────────────────────
 if selected_section == "Analyse SHAP":
     st.markdown("#### 🔬 Explicabilité Globale par Valeurs de Shapley (SHAP)")
-    st.caption("Mesure la contribution marginale de chaque modalité à la probabilité de départ.")
+    st.caption("Contributions calculées par `src.explainability`, agrégées sur un échantillon déterministe.")
 
-    model = load_model("best_model")
+    bundle = load_bundle("best_model")
 
-    if model is None:
+    if bundle is None:
         show_missing_artifact_warning("Modèle (best_model.joblib)", "python scripts/train_pipeline.py")
     elif df is None:
         show_missing_artifact_warning("Données (data/raw/Employee_Attrition_DataSet.csv)")
     else:
         if st.button("Calculer les valeurs SHAP", key="calculate_global_shap"):
-            try:
-                import shap
-
-                n_sample = min(120, len(df))
-                sample_df = df.sample(n=n_sample, random_state=42)
-                X_sample = sample_df[ALL_FEATURES]
-
-                pipeline = model
-                preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
-                classifier = pipeline.steps[-1][1]
-
-                X_trans = preprocessor.transform(X_sample)
+            with st.spinner("⏳ Évaluation des valeurs SHAP sur un échantillon représentatif..."):
                 try:
-                    feat_names = list(preprocessor.get_feature_names_out())
-                except Exception:
-                    feat_names = None
+                    from src.explainability import explain_many
 
-                classes = list(getattr(classifier, "classes_", [0, 1]))
-                yes_idx = classes.index("Yes") if "Yes" in classes else (classes.index(1) if 1 in classes else 1)
-
-                with st.spinner("⏳ Évaluation des valeurs SHAP sur un échantillon représentatif..."):
-                    explainer = shap.Explainer(classifier, feature_names=feat_names)
-                    shap_values = explainer(X_trans)
-                    st.session_state.global_shap_display = (
-                        shap_values[:, :, yes_idx] if len(shap_values.shape) == 3 else shap_values
+                    sample_df = df.sample(n=min(120, len(df)), random_state=42)[ALL_FEATURES]
+                    background = df.sample(n=min(100, len(df)), random_state=42)[ALL_FEATURES]
+                    st.session_state.global_shap_display = explain_many(
+                        bundle, sample_df, background=background, top_k=3,
                     )
-            except ImportError:
-                st.info("ℹ️ La bibliothèque `shap` n'est pas installée (`pip install shap`) pour afficher les graphiques de Shapley.")
-            except Exception as e:
-                st.info(f"ℹ️ Le calcul des valeurs SHAP n'a pas pu aboutir pour cet algorithme : {e}")
+                except Exception as e:
+                    st.info(f"ℹ️ Le calcul des valeurs SHAP n'a pas pu aboutir pour cet algorithme : {e}")
 
-        shap_display = st.session_state.get("global_shap_display")
-        if shap_display is None:
+        shap_df = st.session_state.get("global_shap_display")
+        if shap_df is None:
             st.caption("Le calcul SHAP est lancé uniquement à la demande.")
         else:
-            import matplotlib.pyplot as plt
-
+            agg = (
+                shap_df.groupby("feature")["contribution"]
+                .apply(lambda values: float(values.abs().mean()))
+                .sort_values()
+            )
             c_s1, c_s2 = st.columns(2)
             with c_s1:
-                st.markdown("##### Beeswarm Plot (Distribution d'impact)")
-                fig_bw, ax_bw = plt.subplots(figsize=(8, 6))
-                shap.plots.beeswarm(shap_display, max_display=12, show=False)
-                plt.title("Impact des valeurs sur la prédiction de départ", fontsize=12)
-                plt.tight_layout()
-                st.pyplot(fig_bw)
-                plt.close(fig_bw)
+                st.markdown("##### Distribution d'impact (type beeswarm)")
+                fig_bw = px.strip(
+                    shap_df,
+                    x="contribution",
+                    y="feature",
+                    color="impact",
+                    template=PLOTLY_TEMPLATE,
+                    height=420,
+                    title="Contribution des variables métier au risque de départ",
+                )
+                fig_bw.update_layout(margin=dict(t=45, b=30, l=150, r=20), yaxis_title="")
+                st.plotly_chart(fig_bw, use_container_width=True)
 
             with c_s2:
-                st.markdown("##### Bar Plot (|SHAP| Moyen)")
-                fig_bar_s, ax_bar_s = plt.subplots(figsize=(8, 6))
-                shap.plots.bar(shap_display, max_display=12, show=False)
-                plt.title("Importance globale absolue (|SHAP|)", fontsize=12)
-                plt.tight_layout()
-                st.pyplot(fig_bar_s)
-                plt.close(fig_bar_s)
+                st.markdown("##### Bar Plot (|SHAP| moyen)")
+                fig_bar_s = px.bar(
+                    x=agg.values,
+                    y=agg.index,
+                    orientation="h",
+                    template=PLOTLY_TEMPLATE,
+                    height=420,
+                    title="Importance globale absolue (|SHAP|)",
+                )
+                fig_bar_s.update_layout(
+                    margin=dict(t=45, b=30, l=150, r=20), xaxis_title="|SHAP| moyen", yaxis_title="",
+                )
+                st.plotly_chart(fig_bar_s, use_container_width=True)
+
+            st.caption(
+                f"{len(shap_df)} contributions issues de {shap_df['ligne'].nunique()} profils "
+                f"— seuil du bundle : {float(bundle['threshold']):.4f}"
+            )
+            st.dataframe(
+                shap_df.head(20).rename(columns={
+                    "ligne": "Ligne", "rang": "Rang", "feature": "Variable",
+                    "contribution": "Contribution", "impact": "Impact", "probability": "Probabilité Yes",
+                }),
+                use_container_width=True,
+                hide_index=True,
+            )
 
 # ── Tab 3: Actionable HR Insights ──────────────────────────────────────
 if selected_section == "Leviers d'action RH":

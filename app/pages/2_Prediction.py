@@ -18,7 +18,8 @@ st.set_page_config(
 
 from app.utils import (
     load_css,
-    load_model,
+    load_bundle,
+    load_data,
     kpi_card,
     risk_badge,
     section_header,
@@ -32,6 +33,7 @@ from app.utils import (
     COLOR_YES,
     COLOR_WARN,
     ALL_FEATURES,
+    FEATURE_COLS,
     DEPARTMENT_LIST,
 )
 
@@ -53,6 +55,10 @@ if "last_prediction" not in st.session_state:
     st.session_state.last_prediction = None
 if "last_input_data" not in st.session_state:
     st.session_state.last_input_data = None
+if "last_explanation" not in st.session_state:
+    st.session_state.last_explanation = None
+
+df = load_data()
 
 # Two-column layout: Form (left) | Result & What-if (right)
 col_form, col_result = st.columns([5, 6], gap="large")
@@ -175,15 +181,18 @@ with col_form:
 
 # ── Prediction Logic ──────────────────────────────────────────────────
 with col_result:
-    model = load_model("best_model")
-    yes_idx = None
+    bundle = load_bundle("best_model")
+    model = None if bundle is None else bundle["model"]
+    threshold = float(bundle["threshold"]) if bundle is not None else None
+    yes_idx = 1
     if model is not None:
         classes = list(model.classes_)
-        yes_idx = classes.index("Yes") if "Yes" in classes else 1
+        yes_idx = classes.index(1) if 1 in classes else (classes.index("Yes") if "Yes" in classes else 1)
 
     if submitted:
         st.session_state.pop("last_shap_values", None)
-        if model is None:
+        st.session_state.pop("last_explanation", None)
+        if bundle is None:
             show_missing_artifact_warning(
                 "Modèle entraîné (best_model.joblib)",
                 "python scripts/train_pipeline.py",
@@ -206,16 +215,16 @@ with col_result:
                     "PromotionLast5Years": promotion_val,
                     "PerformanceRating": int(performance_rating),
                     "TrainingHoursLastYear": int(training_hours),
-                }])
+                }])[FEATURE_COLS]
 
                 try:
-                    pred_class = model.predict(input_data)[0]
-                    probas = model.predict_proba(input_data)[0]
-                    proba_val = float(probas[yes_idx])
-
+                    proba_val = float(model.predict_proba(input_data)[0][yes_idx])
+                    decision = int(proba_val >= threshold)
                     st.session_state.last_prediction = {
-                        "prediction": pred_class,
+                        "prediction": decision,
+                        "label": "Risque Départ" if decision else "Fidélisé",
                         "proba": proba_val,
+                        "threshold": threshold,
                     }
                     st.session_state.last_input_data = input_data
                 except Exception as err:
@@ -224,11 +233,12 @@ with col_result:
     # Display results if available
     if st.session_state.last_prediction is not None:
         res = st.session_state.last_prediction
-        pred_label = res["prediction"]
+        pred_label = res["label"]
         proba_val = res["proba"]
         inp = st.session_state.last_input_data
 
         st.markdown("#### 📊 Diagnostic Prédictif")
+        st.caption(f"Décision prise au seuil optimisé du bundle : **{res['threshold']:.4f}** (probabilité de la classe `Yes`).")
         
         # Risk badge
         st.markdown(
@@ -331,46 +341,61 @@ with col_result:
             except Exception:
                 pass
 
-        # ── SHAP Explanation ──────────────────────────────────────────
+        # ── Explicabilité locale (module centralisé src.explainability) ──
         st.markdown("---")
         with st.expander("🔬 Analyse Explicative SHAP (Feature Contributions)", expanded=False):
             if st.button("Générer l'explication SHAP", key="calculate_individual_shap"):
-                try:
-                    import shap
-
-                    pipeline = model
-                    preprocessor = pipeline.named_steps.get("preprocessor") or pipeline[:-1]
-                    classifier = pipeline.steps[-1][1]
-
-                    X_trans = preprocessor.transform(inp)
-                    try:
-                        feat_names = preprocessor.get_feature_names_out()
-                    except Exception:
-                        feat_names = None
-
-                    explainer = shap.Explainer(classifier, feature_names=feat_names)
-                    shap_vals = explainer(X_trans)
-                    st.session_state.last_shap_values = (
-                        shap_vals[:, :, yes_idx] if len(shap_vals.shape) == 3 else shap_vals
+                if bundle is None:
+                    show_missing_artifact_warning(
+                        "Modèle entraîné (best_model.joblib)",
+                        "python scripts/train_pipeline.py",
                     )
-                except ImportError:
-                    st.info("ℹ️ Le module **SHAP** n'est pas installé (`pip install shap`) pour afficher la décomposition graphique.")
-                except Exception as e:
-                    st.info(f"ℹ️ L'explication SHAP détaillée n'est pas disponible pour ce type d'estimateur ({e}).")
+                else:
+                    with st.spinner("⏳ Calcul des contributions SHAP..."):
+                        try:
+                            from src.explainability import explain_local
 
-            shap_disp = st.session_state.get("last_shap_values")
-            if shap_disp is None:
+                            if df is not None:
+                                background = df.sample(n=min(100, len(df)), random_state=42)[FEATURE_COLS]
+                            else:
+                                background = inp[FEATURE_COLS]
+                            st.session_state.last_explanation = explain_local(
+                                bundle, inp.iloc[0], background=background, top_k=3,
+                            )
+                        except Exception as e:
+                            st.info(f"ℹ️ L'explication SHAP détaillée n'est pas disponible pour ce type d'estimateur ({e}).")
+
+            explanation = st.session_state.get("last_explanation")
+            if explanation is None:
                 st.caption("Le calcul SHAP est lancé uniquement à la demande.")
             else:
-                import shap
-                import matplotlib.pyplot as plt
-
-                fig_shap, ax = plt.subplots(figsize=(9, 5))
-                shap.plots.waterfall(shap_disp[0], max_display=10, show=False)
-                plt.title("Contributions SHAP à la Prédiction", fontsize=13)
-                plt.tight_layout()
-                st.pyplot(fig_shap)
-                plt.close(fig_shap)
+                st.caption(
+                    f"Moteur : `{explanation['explainer']}` — probabilité `Yes` : "
+                    f"{explanation['probability']:.4f} — seuil : {explanation['threshold']:.4f}"
+                )
+                factors = pd.DataFrame(explanation["top_factors"])
+                fig_shap = go.Figure(go.Bar(
+                    x=factors["contribution"],
+                    y=factors["feature"],
+                    orientation="h",
+                    marker_color=[COLOR_YES if v > 0 else COLOR_NO for v in factors["contribution"]],
+                ))
+                fig_shap.update_layout(
+                    title="Top 3 facteurs — contribution à la probabilité de départ",
+                    template="plotly_white",
+                    height=280,
+                    margin=dict(t=45, b=30, l=150, r=30),
+                    xaxis_title="Contribution SHAP",
+                    yaxis_title="",
+                )
+                st.plotly_chart(fig_shap, use_container_width=True)
+                st.dataframe(
+                    factors.rename(columns={
+                        "feature": "Variable", "contribution": "Contribution", "impact": "Impact",
+                    }),
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
     else:
         st.markdown("#### 📊 Diagnostic Prédictif")

@@ -122,7 +122,8 @@ Le numérotage des sections 4 et 7 était indicatif. Les prompts exécutés par 
 | 2 | `feature/lot2-outliers-avances` | #11 (mergée) | `src/outliers.py`, `scripts/run_outliers.py`, `docs/OUTLIERS.md`, `tests/test_outliers.py` | Anwar77-b |
 | 3 | `feature/lot3-clustering-avance` | #12 (mergée) | `src/unsupervised.py`, `scripts/run_unsupervised_advanced.py`, `docs/CLUSTERING_AVANCE.md` | Anwar77-b |
 | 4 | `feature/lot4-modeles-explicabilite` | #13 (mergée) | `src/models.py`, `src/explainability.py`, `scripts/train_pipeline.py`, `scripts/run_explainability.py`, `tests/test_models_extended.py`, `tests/test_explainability.py` | Anwar77-b |
-| 5 | `feature/lot5-rapport-scientifique` | PR ouverte dans cette livraison | `docs/rapport/rapport.md`, `scripts/generate_rapport.py`, `docs/Rapport_MiniProject.pdf`, `docs/Rapport_Projet.pdf`, `README.md` | Anwar77-b |
+| 5 | `feature/lot5-rapport-scientifique` | #14 (mergée) | `docs/rapport/rapport.md`, `scripts/generate_rapport.py`, `docs/Rapport_MiniProject.pdf`, `docs/Rapport_Projet.pdf`, `README.md` | Anwar77-b |
+| 6 | `feature/lot6-interface-streamlit` | PR à ouvrir | `app/utils.py`, `app/pages/2_Prediction.py`, `app/pages/4_Facteurs_Demission.py`, `app/pages/5_Prediction_en_lot.py`, `tests/test_app_smoke.py`, `README.md` | Anwar77-b |
 
 Le rapport `docs/Rapport_Projet.pdf` était présent sur `upstream/main` depuis le commit `9233737` ; la remarque de l'évaluateur (-0,70 pt) portait sur le commit `831b988`, antérieur à ce rapport. Le lot 5 le remplace par un rapport scientifique régénéré et versionné, disponible sous le nom attendu `docs/Rapport_MiniProject.pdf` et sous l'alias `docs/Rapport_Projet.pdf`. Le template `docs/Rapport_MiniProject_apercu.pdf` est conservé sans modification.
 

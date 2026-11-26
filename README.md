@@ -54,6 +54,8 @@ Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictio
 
 Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à ajuster la préparation (étape 3) et la modélisation (étape 4).
 
+L'interface Streamlit est livrée par son propriétaire (lot 6) : `streamlit run app/Home.py`. Elle charge le bundle `models/best_model.joblib` via `src.models.load_bundle` (probabilité de la classe `Yes` et seuil optimisé inclus), utilise les 12 variables de `src.preprocessing.FEATURE_COLS` (`No→0` / `Yes→1`, `EmployeeID` et `Attrition` exclus de `X`) et délègue l'explicabilité à `src.explainability`. Les pages de prédiction individuelle, de prédiction en lot et d'analyse SHAP se trouvent dans [`app/pages/`](app/pages/).
+
 ---
 
 ## 4. Notebooks et scripts
@@ -195,7 +197,7 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | Davies-Bouldin, indice de Dunn | ✅ [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figure [`40`](reports/figures/40_indices_clustering.png) |
 | Règles d'association (support, confiance) | ❌ hors périmètre du projet |
 | CRISP-DM en 6 étapes | ✅ §3 |
-| Déploiement `joblib`, application web | ✅ |
+| Déploiement `joblib`, application web | ✅ [`app/Home.py`](app/Home.py) — `streamlit run app/Home.py` (lot 6) |
 | Surveillance / concept drift | ⚠️ documenté comme limite, non implémenté |
 | Rapport scientifique PDF | ✅ [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf) (15 pages, lots 0 à 4) et [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) |
 

@@ -1,16 +1,28 @@
 """Shared utilities, UI components and theming for the Streamlit application."""
 import json
+import sys
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
-import joblib
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# ── Paths ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.models import load_bundle as _load_bundle  # noqa: E402
+from src.preprocessing import (  # noqa: E402
+    CATEGORICAL_FEATURES as _CATEGORICAL_FEATURES,
+    FEATURE_COLS,
+    ID_COL,
+    NUMERICAL_FEATURES as _NUMERICAL_FEATURES,
+    TARGET,
+)
+
+# ── Paths ──────────────────────────────────────────────────────────────
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA = DATA_DIR / "raw" / "Employee_Attrition_DataSet.csv"
 MODELS_DIR = PROJECT_ROOT / "models"
@@ -37,16 +49,10 @@ PLOTLY_COLORWAY = [
     "#64748B",  # Slate
 ]
 
-# ── Feature definitions ────────────────────────────────────────────────
-NUMERICAL_FEATURES = [
-    "Age", "JobLevel", "YearsAtCompany", "MonthlyIncome",
-    "JobSatisfaction", "WorkLifeBalance", "DistanceFromHome",
-    "PerformanceRating", "TrainingHoursLastYear"
-]
-CATEGORICAL_FEATURES = ["Department", "OverTime", "PromotionLast5Years"]
-TARGET = "Attrition"
-ID_COL = "EmployeeID"
-ALL_FEATURES = NUMERICAL_FEATURES + CATEGORICAL_FEATURES
+# ── Feature definitions (single source of truth: src.preprocessing) ────
+NUMERICAL_FEATURES = list(_NUMERICAL_FEATURES)
+CATEGORICAL_FEATURES = list(_CATEGORICAL_FEATURES)
+ALL_FEATURES = list(FEATURE_COLS)  # alias conservé pour les pages existantes
 
 MODEL_NAMES = {
     "ZeroR": "Zero-R (Baseline)",
@@ -286,15 +292,22 @@ def load_data() -> Optional[pd.DataFrame]:
 
 
 @st.cache_resource
-def load_model(name: str = "best_model"):
-    """Load a saved model pipeline. Returns None on failure."""
+def load_bundle(name: str = "best_model"):
+    """Load the trained Pipeline bundle, including the optimized threshold."""
     path = MODELS_DIR / f"{name}.joblib"
     if not path.exists():
         return None
     try:
-        return joblib.load(path)
+        return _load_bundle(path)
     except Exception:
         return None
+
+
+@st.cache_resource
+def load_model(name: str = "best_model"):
+    """Compatibility helper: return the Pipeline held by the bundle."""
+    bundle = load_bundle(name)
+    return None if bundle is None else bundle["model"]
 
 
 @st.cache_data

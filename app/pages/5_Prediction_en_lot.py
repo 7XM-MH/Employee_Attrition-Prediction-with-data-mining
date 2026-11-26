@@ -19,7 +19,7 @@ st.set_page_config(
 
 from app.utils import (
     load_css,
-    load_model,
+    load_bundle,
     get_plotly_template,
     kpi_card,
     risk_badge,
@@ -132,19 +132,20 @@ else:
 
     st.success(f"✅ Jeu de données valide — **{len(input_df):,} collaborateur(s)** détecté(s).")
 
-    # Load Model
-    model = load_model("best_model")
-    if model is None:
+    # Load Model bundle (probabilité Yes + seuil optimisé)
+    bundle = load_bundle("best_model")
+    if bundle is None:
         show_missing_artifact_warning(
             "Modèle entraîné (best_model.joblib)",
             "python scripts/train_pipeline.py",
         )
         st.stop()
+    model = bundle["model"]
+    threshold = float(bundle["threshold"])
 
     with st.spinner("⏳ Calcul des probabilités d'attrition sur l'ensemble de la cohorte..."):
         try:
             X_batch = input_df[ALL_FEATURES].copy()
-            preds = model.predict(X_batch)
             probas = model.predict_proba(X_batch)
 
             classes = list(getattr(model, "classes_", [0, 1]))
@@ -154,9 +155,14 @@ else:
             st.error(f"❌ Échec de l'inférence : {e}")
             st.stop()
 
+    st.caption(
+        f"Décision au seuil optimisé du bundle : **{threshold:.4f}**. "
+        "Les paliers 30 % / 60 % ci-dessous sont des niveaux d'affichage, pas le seuil de décision."
+    )
+
     # Enrich dataframe with scores & categories
     res_df = input_df.copy()
-    res_df["Décision"] = ["Risque Départ" if p == "Yes" or p == 1 else "Fidélisé" for p in preds]
+    res_df["Décision"] = ["Risque Départ" if p >= threshold else "Fidélisé" for p in p_yes]
     res_df["Probabilité Risque (%)"] = np.round(p_yes * 100, 2)
     res_df["Score Risque"] = p_yes
     res_df["Niveau Risque"] = [
