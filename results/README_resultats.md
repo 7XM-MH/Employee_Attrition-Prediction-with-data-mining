@@ -17,7 +17,7 @@
 | Catégorie | Contenu | Règle Git |
 |---|---|---|
 | Jeu source | `data/raw/Employee_Attrition_DataSet.csv` | suivi |
-| Résultats CSV | `results/*.csv` (26 fichiers) et `results/optimization/*.csv` | suivis |
+| Résultats CSV | `results/*.csv` (22 fichiers) et `results/optimization/*.csv` (6 fichiers) | suivis |
 | Synthèses clés | `results/model_comparison.csv`, `results/cv_summary.csv`, `results/tableau_metriques_rapport.csv`, `results/metrics_bootstrap_ic.csv`, `results/classement_multicritere.csv`, `results/explainability_top3.csv` | suivies |
 | Statistiques | `results/stat_tests_vs_attrition.csv`, `results/stat_spearman_paires.csv`, `results/stat_normalite_shapiro.csv`, `results/stat_kruskal_wallis.csv`, `results/descriptive_stats.csv` | suivies |
 | Figures du rapport | `reports/figures/*.png` (42 figures, numéros 01 à 42) | suivies |
@@ -61,13 +61,13 @@ python -m pytest tests -q
 
 - `run_preprocessing.py` : CSV traités et `models/preprocessor.joblib` ; doit précéder les entraînements.
 - `train_pipeline.py` : pipeline du guide, 6 modèles imposés, sélection sur F1 CV, JSON de métriques.
-- `train_models.py` : analyse étendue, 14 modèles disponibles dans `src/models.py`, sélection sur AP CV, seuil optimal, bootstrap, `results/model_comparison.csv` et `results/cv_summary.csv`.
+- `train_models.py` : analyse étendue, 14 configurations disponibles dans `src/models.py` (9 variantes évaluées), sélection sur AP CV, seuil optimal, bootstrap, `results/model_comparison.csv` et `results/cv_summary.csv`.
 - `run_unsupervised.py` : PCA, KMeans, agglomératif, DBSCAN.
 - `run_unsupervised_advanced.py` : choix de k, K-Medoids, DIANA, indices et figure 41.
 - `run_outliers.py` : IQR, Z-score, Isolation Forest, LOF et figure 36.
 - `run_explainability.py` : top-3 SHAP par employé, `results/explainability_top3.csv` et figure 42.
 - `generate_rapport.py` : `docs/Rapport_MiniProject.pdf` et son alias `docs/Rapport_Projet.pdf` depuis `docs/rapport/rapport.md`.
-- `pytest tests -q` : vérification des contrats ; **68 tests verts** attendus.
+- `pytest tests -q` : vérification des contrats ; **79 tests verts** attendus.
 
 Sous Windows avec l'environnement du projet :
 

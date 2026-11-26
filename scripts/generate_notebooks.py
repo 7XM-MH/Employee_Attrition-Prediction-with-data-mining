@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 NOTEBOOKS_DIR = Path(__file__).resolve().parent.parent / "notebooks"
-NOTEBOOKS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def create_notebook(cells):
@@ -569,9 +568,16 @@ notebooks = {
     "04_model_training_evaluation.ipynb": nb4_cells,
 }
 
-for filename, cells in notebooks.items():
-    nb = create_notebook(cells)
-    dest = NOTEBOOKS_DIR / filename
-    with open(dest, "w", encoding="utf-8") as f:
-        json.dump(nb, f, indent=2, ensure_ascii=False)
-    print(f"✔ Notebook généré : {dest.name} ({len(cells)} cellules)")
+def main() -> None:
+    """Generate notebooks only when the script is executed, never on import."""
+    NOTEBOOKS_DIR.mkdir(parents=True, exist_ok=True)
+    for filename, cells in notebooks.items():
+        nb = create_notebook(cells)
+        dest = NOTEBOOKS_DIR / filename
+        with open(dest, "w", encoding="utf-8") as f:
+            json.dump(nb, f, indent=2, ensure_ascii=False)
+        print(f"✔ Notebook généré : {dest.name} ({len(cells)} cellules)")
+
+
+if __name__ == "__main__":
+    main()

@@ -250,12 +250,12 @@ else:
     st.dataframe(
         display_df,
         column_config={
-            "Score Risque": st.column_config.ProgressColumn(
-                "Indice de Risque",
-                help="Probabilité estimée d'attrition (0 à 100%)",
+            "Probabilité Risque (%)": st.column_config.ProgressColumn(
+                "Indice de Risque (%)",
+                help="Probabilité estimée d'attrition en pourcentage",
                 format="%.1f %%",
                 min_value=0.0,
-                max_value=1.0,
+                max_value=100.0,
             ),
             "MonthlyIncome": st.column_config.NumberColumn(
                 "Salaire (MAD)",
@@ -270,8 +270,12 @@ else:
         hide_index=True,
     )
 
-    # Export Button
-    export_csv = display_df.to_csv(index=False).encode("utf-8")
+    # Export Button — l'identifiant anonyme n'est pas ré-exporté (principe de moindre exposition).
+    exported_df = display_df.drop(columns=[
+        col for col in ("EmployeeID", "Attrition") if col in display_df.columns
+    ])
+    export_csv = exported_df.to_csv(index=False).encode("utf-8")
+    st.caption("L'export exclut volontairement `EmployeeID` et `Attrition`.")
     st.download_button(
         label="📥 Exporter les Résultats Complets (CSV)",
         data=export_csv,

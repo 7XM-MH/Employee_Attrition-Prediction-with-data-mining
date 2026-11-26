@@ -233,12 +233,11 @@ with col_result:
     # Display results if available
     if st.session_state.last_prediction is not None:
         res = st.session_state.last_prediction
-        pred_label = res["label"]
         proba_val = res["proba"]
         inp = st.session_state.last_input_data
 
         st.markdown("#### 📊 Diagnostic Prédictif")
-        st.caption(f"Décision prise au seuil optimisé du bundle : **{res['threshold']:.4f}** (probabilité de la classe `Yes`).")
+        st.caption(f"Seuil de décision du modèle : **{res['threshold']:.4f}** (probabilité de la classe `Yes`).")
         
         # Risk badge
         st.markdown(
@@ -257,10 +256,11 @@ with col_result:
         # KPI Summary cards
         k1, k2, k3 = st.columns(3)
         with k1:
+            decision = int(res["prediction"])
             kpi_card(
                 "Décision",
-                "Risque Départ" if pred_label == "Yes" else "Fidélisé",
-                border_color=COLOR_YES if pred_label == "Yes" else COLOR_NO,
+                "Risque Départ" if decision else "Fidélisé",
+                border_color=COLOR_YES if decision else COLOR_NO,
             )
         with k2:
             kpi_card("Probabilité", f"{proba_val * 100:.1f}%", border_color=COLOR_WARN)

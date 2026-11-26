@@ -12,6 +12,7 @@ réappris sur les seuls plis d'entraînement -> aucune fuite de données.
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -53,6 +54,7 @@ from src.preprocessing import (
 ROOT = Path(__file__).resolve().parents[1]
 MODELS_DIR = ROOT / "models"
 CACHE_DIR = MODELS_DIR / "cache"
+RESULTS_DIR = ROOT / "results"
 RANDOM_STATE = 42
 
 # Validation croisée K-Fold stratifiée, K = 5 (minimum exigé : K >= 5)
@@ -378,8 +380,32 @@ def save_bundle(name: str, estimator, threshold: float, info: dict | None = None
     return path
 
 
+def _legacy_threshold() -> float:
+    """Seuil de l'artefact historique (Pipeline nu, sans seuil optimisé)."""
+    path = RESULTS_DIR / "selection_metadata.json"
+    try:
+        meta = json.loads(path.read_text(encoding="utf-8"))
+        return float(meta.get("threshold", meta.get("best_threshold", 0.5)))
+    except (OSError, TypeError, ValueError):
+        return 0.5
+
+
+def _as_bundle(artifact) -> dict:
+    """Normalise un ancien ``best_model.joblib`` (Pipeline nu) en bundle complet."""
+    if isinstance(artifact, dict) and "model" in artifact and "threshold" in artifact:
+        return artifact
+    return {
+        "name": "legacy",
+        "model": artifact,
+        "threshold": _legacy_threshold(),
+        "features": FEATURE_COLS,
+        "info": {"legacy_artifact": True},
+    }
+
+
 def load_bundle(path: Path | None = None) -> dict:
-    return joblib.load(path or MODELS_DIR / "best_model.joblib")
+    """Charge le bundle et accepte aussi les artefacts Pipeline des anciennes versions."""
+    return _as_bundle(joblib.load(path or MODELS_DIR / "best_model.joblib"))
 
 
 def predict_employee(bundle: dict, record: dict | pd.DataFrame) -> dict:

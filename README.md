@@ -47,14 +47,14 @@ Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictio
 |---|---|
 | **1. Compréhension métier** | §1 ci-dessus, [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md) |
 | **2. Compréhension des données** | [`DISCOVERY.md`](DISCOVERY.md), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb), [`results/descriptive_stats.csv`](results/descriptive_stats.csv), figures `01` à `08` |
-| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) |
+| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb) |
 | **4. Modélisation** | [`scripts/train_pipeline.py`](scripts/train_pipeline.py) (pipeline du guide), [`scripts/train_models.py`](scripts/train_models.py) + [`src/models.py`](src/models.py) (analyse étendue), [`results/cv_summary.csv`](results/cv_summary.csv), figures `09` à `16` |
 | **5. Évaluation** | [`results/model_comparison.csv`](results/model_comparison.csv), `results/*.json`, [`tests/`](tests/), figures `17` à `23` |
 | **6. Déploiement et surveillance** | Modèles `joblib` dans `models/`, application Streamlit dans `app/` ; surveillance et concept drift discutés en limite (§9) |
 
 Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à ajuster la préparation (étape 3) et la modélisation (étape 4).
 
-L'interface Streamlit est livrée par son propriétaire (lot 6) : `streamlit run app/Home.py`. Elle charge le bundle `models/best_model.joblib` via `src.models.load_bundle` (probabilité de la classe `Yes` et seuil optimisé inclus), utilise les 12 variables de `src.preprocessing.FEATURE_COLS` (`No→0` / `Yes→1`, `EmployeeID` et `Attrition` exclus de `X`) et délègue l'explicabilité à `src.explainability`. Les pages de prédiction individuelle, de prédiction en lot et d'analyse SHAP se trouvent dans [`app/pages/`](app/pages/).
+L'interface Streamlit est livrée par son propriétaire (lot 6) : `streamlit run app/Home.py`. Elle charge le bundle `models/best_model.joblib` via `src.models.load_bundle` (probabilité de la classe `Yes` et seuil de décision du bundle ; 0,5 pour l'artefact historique du guide), utilise les 12 variables de `src.preprocessing.FEATURE_COLS` (`No→0` / `Yes→1`, `EmployeeID` et `Attrition` exclus de `X`) et délègue l'explicabilité à `src.explainability`. Les pages de prédiction individuelle, de prédiction en lot et d'analyse SHAP se trouvent dans [`app/pages/`](app/pages/).
 
 ---
 
@@ -62,13 +62,14 @@ L'interface Streamlit est livrée par son propriétaire (lot 6) : `streamlit run
 
 | Fichier | Rôle |
 |---|---|
-| `notebooks/01_eda_and_cleaning.ipynb` | EDA, audit qualité, détection/écrêtage IQR des outliers, distributions, corrélations |
-| `notebooks/01_eda_and_cleaning.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
+| `notebooks/01_eda_and_cleaning.ipynb` | EDA, audit qualité, détection/écrêtage IQR des outliers, distributions, corrélations, χ², Mann-Whitney U, Spearman, correction Benjamini-Hochberg |
 | `notebooks/02_preprocessing_encoding.ipynb` | Encodage Y/X, normalisation, split train/test sans fuite |
-| `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, gain/lift, importance par permutation |
+| `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, importance par permutation |
+| `notebooks/04_optimization.ipynb` | Preuves d'optimisation, CV imbriquée, analyse coût-bénéfice du seuil |
+| `notebooks/05_metrics_analysis.ipynb` | Tableau multicritère, matrices de confusion, ROC/PR, intervalles de confiance |
 | `scripts/run_preprocessing.py` | Prétraitement reproductible brut → `data/processed/` + `models/preprocessor.joblib` |
 | `scripts/train_pipeline.py` | Pipeline du guide : 6 modèles imposés, StratifiedKFold(5), artefacts JSON |
-| `scripts/train_models.py` | Analyse étendue : 14 modèles, recherche AP, bootstrap, optimisation du seuil |
+| `scripts/train_models.py` | Analyse étendue : 14 configurations définies / 9 variantes évaluées, recherche AP, bootstrap, optimisation du seuil |
 | `scripts/run_unsupervised.py` | KMeans, PCA, agglomératif, DBSCAN |
 | [`scripts/run_unsupervised_advanced.py`](scripts/run_unsupervised_advanced.py) | Choix de k, K-Medoids, DIANA, cosinus, indices de validation → `results/clustering_advanced.csv` et figures 37 à 41 |
 | [`scripts/run_outliers.py`](scripts/run_outliers.py) | Détection des outliers : IQR, Z-score, Isolation Forest, LOF → `results/outliers_report.csv` et figure 36 |
@@ -82,7 +83,7 @@ Analyse des outliers détaillée dans [`docs/OUTLIERS.md`](docs/OUTLIERS.md), av
 
 ## 5. Tests statistiques (α = 0,05, correction BH)
 
-Extrait de [`results/stat_tests_vs_attrition.csv`](results/stat_tests_vs_attrition.csv) — 12 variables testées, 10 significatives après correction :
+Extrait de [`results/stat_tests_vs_attrition.csv`](results/stat_tests_vs_attrition.csv) — 12 variables testées, 9 significatives après correction :
 
 | Variable | Test | p-value ajustée (BH) | Taille d'effet | Sens |
 |---|---|---:|---:|---|
@@ -113,7 +114,7 @@ Fichiers complémentaires : [`stat_spearman_paires.csv`](results/stat_spearman_p
 
 **Modèle retenu : `DecisionTree`** — F1 CV = 0,1365 ± 0,0230, F1 test = 0,1230, ROC-AUC = 0,5406. Son excédent par rapport à ZeroR reste faible : le signal prédictif de ce jeu synthétique est limité.
 
-### 6.2 Analyse étendue — 14 modèles et optimisation du seuil
+### 6.2 Analyse étendue — 14 configurations définies, 9 variantes évaluées et optimisation du seuil
 
 `python scripts/train_models.py` — sélection sur l'**Average Precision** en CV 5 plis, intervalles de confiance bootstrap, seuil de décision optimisé, calibration, gain/lift, importance par permutation.
 
@@ -161,7 +162,7 @@ pip install -r requirements.txt
 
 python scripts/run_preprocessing.py   # données traitées + preprocessor.joblib
 python scripts/train_pipeline.py      # pipeline du guide (6 modèles)
-python scripts/train_models.py        # analyse étendue (14 modèles, plus long)
+python scripts/train_models.py        # analyse étendue (variantes évaluées, plus long)
 python scripts/run_unsupervised.py    # clustering (4 modèles historiques)
 python scripts/run_unsupervised_advanced.py  # clustering avancé (lot 3)
 python scripts/run_outliers.py        # détection avancée des outliers
@@ -172,7 +173,7 @@ streamlit run app/Home.py             # application web
 Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par Git** (voir `.gitignore`) : ils sont recréés par les scripts ci-dessus. Les `.csv` de résultats et les figures de `reports/figures/` sont versionnés.
 
 > [!NOTE]
-> **État connu :** le refactoring de `src/preprocessing.py` a remplacé `ALL_FEATURES` par `FEATURE_COLS` et `load_raw_data()` par `load_raw(path)`. `src/unsupervised.py` est corrigé depuis le lot 3 (test de non-régression dans [`tests/test_unsupervised.py`](tests/test_unsupervised.py)). `scripts/train_pipeline.py` importe encore `ALL_FEATURES`, `DATA_PATH` et `prepare_data` : **sa commande de régénération supervisée ne fonctionne pas aujourd'hui**. Correctif prévu au lot 4, sans modification du code ML dans ce lot. Voir [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md).
+> **État connu :** le refactoring de `src/preprocessing.py` a remplacé `ALL_FEATURES` par `FEATURE_COLS` et `load_raw_data()` par `load_raw(path)`. `src/unsupervised.py` est corrigé depuis le lot 3 (test de non-régression dans [`tests/test_unsupervised.py`](tests/test_unsupervised.py)). `scripts/train_pipeline.py` définit désormais ses propres constantes de compatibilité et régénère `models/best_model.joblib` au format bundle `{model, threshold}`. Voir [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md).
 
 ---
 
@@ -188,7 +189,7 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | Similarité cosinus, Minkowski | ✅ cosinus testée (Minkowski hors périmètre) — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) |
 | Classification supervisée, CV 5 plis, métriques | ✅ |
 | K-NN, arbres, forêts, Naive Bayes, SVM | ✅ |
-| Ensembles (Extra Trees, AdaBoost, Bagging), K-NN cosinus | ✅ [`src/models.py`](src/models.py), 14 modèles au total |
+| Ensembles (Extra Trees, AdaBoost, Bagging), K-NN cosinus | ✅ [`src/models.py`](src/models.py), 14 configurations définies / 9 variantes évaluées |
 | Sélection de variables dans le Pipeline (CV sans fuite) | ✅ `SelectKBest` dans [`src/models.py`](src/models.py) |
 | Explicabilité locale SHAP (top 3 facteurs) | ✅ [`src/explainability.py`](src/explainability.py), [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md), figure [`42`](reports/figures/42_shap_local.png) |
 | K-Medoids (PAM), DIANA, dendrogramme | ✅ [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figures [`39`](reports/figures/39_kmedoids_diana.png) et [`38`](reports/figures/38_dendrogramme.png) |
@@ -213,7 +214,7 @@ Livrables du lot 4 — [`src/models.py`](src/models.py), [`src/explainability.py
 
 - [`42_shap_local.png`](reports/figures/42_shap_local.png) — contribution SHAP moyenne des facteurs locaux sur 200 employés ;
 - les six clés du guide (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) restent inchangées dans [`scripts/train_pipeline.py`](scripts/train_pipeline.py), dont les imports ont été réparés ;
-- `pytest tests -q` : **68 tests verts** (14 nouveaux tests pour les modèles étendus et l’explicabilité).
+- `pytest tests -q` : **79 tests verts** (ajouts successifs pour les modèles étendus, l’explicabilité et l’interface).
 
 Livrables du lot 5 — [`docs/rapport/rapport.md`](docs/rapport/rapport.md), [`scripts/generate_rapport.py`](scripts/generate_rapport.py) :
 
@@ -238,12 +239,12 @@ Livrables du lot 5 — [`docs/rapport/rapport.md`](docs/rapport/rapport.md), [`s
 ├── README.md, DISCOVERY.md
 ├── data/raw/                  # CSV source (10 000 × 14)
 ├── data/processed/            # .gitkeep + données générées (ignorées)
-├── notebooks/                 # 4 notebooks
+├── notebooks/                 # 5 notebooks
 ├── src/                       # preprocessing, models, evaluation, stats_tests, unsupervised…
 ├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised, run_outliers…
 ├── models/                    # .gitkeep + .joblib générés (ignorés)
 ├── results/                   # CSV versionnés + JSON générés (ignorés)
-├── reports/figures/           # 41 figures
+├── reports/figures/           # 42 figures
 ├── docs/                      # guide, dictionnaire de données, figures
 ├── app/                       # application Streamlit (interface)
 └── tests/                     # suite pytest

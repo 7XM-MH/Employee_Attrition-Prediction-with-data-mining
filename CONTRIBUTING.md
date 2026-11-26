@@ -54,7 +54,7 @@ git status --short --branch
 
 Contrôles attendus :
 
-- `68 passed` (ou écart explicitement expliqué dans la PR) ;
+- `pytest tests -q` : tous les tests passent (ou écart explicitement expliqué dans la PR) ;
 - aucun marqueur temporaire ni ancien placeholder de spécialité dans les fichiers touchés ;
 - tous les liens Markdown internes valides ;
 - aucun fichier du périmètre protégé ni artefact généré dans `git status` ;

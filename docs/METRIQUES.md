@@ -47,7 +47,7 @@ La cible `Attrition` est déséquilibrée : environ 10 négatifs pour 1 positif.
 
 Avec une classe positive rare, les probabilités prédites pour les vrais `Yes` restent le plus souvent inférieures à 0,5. Au seuil par défaut :
 
-1. aucun employé n'est prédit `Yes` → `TP = 0`, `FP = 0`, `FN = 903` environ ;
+1. aucun employé n'est prédit `Yes` → `TP = 0`, `FP = 0`, `FN = 181` sur le jeu de test (environ 903 sur le jeu complet) ;
 2. `Precision = 0/0` est ramenée à 0, `Recall = 0`, donc **F1 = 0** ;
 3. l'accuracy reste à 0,9095 parce que tous les `No` sont bien classés.
 

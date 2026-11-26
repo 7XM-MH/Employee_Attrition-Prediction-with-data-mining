@@ -9,7 +9,7 @@ Périmètre : données, modèles, évaluation et explicabilité ; interface hors
 
 Ce rapport documente l'intégralité de la chaîne de fouille de données réalisée sur le jeu synthétique *Employee Attrition* : audit et exploration, contrôles statistiques, prétraitement sans fuite, détection des outliers, modélisation supervisée, apprentissage non supervisé et explicabilité locale. Le jeu comporte 10 000 lignes et 14 colonnes brutes ; après exclusion de l'identifiant `EmployeeID` et de la cible `Attrition`, 12 variables explicatives sont conservées. La classe positive `Yes` représente 903 employés, soit 9,03 % de l'échantillon. Aucune valeur manquante ni aucun doublon n'a été détecté.
 
-Deux protocoles supervisés distincts sont rapportés, car ils répondent à des critères de sélection différents et ne doivent pas être confondus. Le **pipeline du guide** sélectionne sur le F1 moyen en validation croisée stratifiée à cinq plis parmi six modèles imposés ; il retient `DecisionTree` avec un F1 de validation croisée de 0,1365 ± 0,0230 et un F1 sur le jeu de test de 0,1230 (ROC-AUC = 0,5406). L'**analyse étendue** sélectionne sur la précision moyenne (*Average Precision*, AP) parmi 14 modèles ; elle retient `Gradient Boosting` avec une AP de validation croisée de 0,1729 ± 0,0136. Au seuil optimisé de 0,1176, ce dernier obtient sur le test une exactitude de 0,7605, une précision de 0,1761, un rappel de 0,4475, un F1 de 0,2527, une ROC-AUC de 0,6648 (IC 95 % bootstrap : [0,622 ; 0,705]) et une PR-AUC de 0,1732.
+Deux protocoles supervisés distincts sont rapportés, car ils répondent à des critères de sélection différents et ne doivent pas être confondus. Le **pipeline du guide** sélectionne sur le F1 moyen en validation croisée stratifiée à cinq plis parmi six modèles imposés ; il retient `DecisionTree` avec un F1 de validation croisée de 0,1365 ± 0,0230 et un F1 sur le jeu de test de 0,1230 (ROC-AUC = 0,5406). L'**analyse étendue** sélectionne sur la précision moyenne (*Average Precision*, AP) parmi 14 configurations définies (9 variantes évaluées) ; elle retient `Gradient Boosting` avec une AP de validation croisée de 0,1729 ± 0,0136. Au seuil optimisé de 0,1176, ce dernier obtient sur le test une exactitude de 0,7605, une précision de 0,1761, un rappel de 0,4475, un F1 de 0,2527, une ROC-AUC de 0,6648 (IC 95 % bootstrap : [0,622 ; 0,705]) et une PR-AUC de 0,1732.
 
 - Au seuil par défaut de 0,5, **tous** les modèles étendus prédisent zéro départ : leur F1 est nul. L'optimisation du seuil de décision, calibrée hors du jeu de test, est donc indispensable avec une classe rare à 9 %.
 - La référence `Zero-R` atteint 0,9095 d'exactitude mais un F1 nul : elle illustre le piège de l'exactitude sur un jeu déséquilibré et justifie le choix de l'AP et du F1.
@@ -112,9 +112,9 @@ Quatre méthodes complémentaires ont été appliquées aux variables numérique
 
 ### 6.1 Deux protocoles de sélection
 
-Le pipeline du guide (`scripts/train_pipeline.py`) évalue six modèles imposés avec `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` et retient le F1 moyen maximal en validation croisée. L'analyse étendue (`scripts/train_models.py`, `src/models.py`) évalue 14 modèles avec le même découpage, mais sélectionne sur l'AP, plus adaptée à une classe rare, et suit ROC-AUC et F1 en parallèle.
+Le pipeline du guide (`scripts/train_pipeline.py`) évalue six modèles imposés avec `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` et retient le F1 moyen maximal en validation croisée. L'analyse étendue (`scripts/train_models.py`, `src/models.py`) définit 14 configurations et évalue 9 variantes avec le même découpage, mais sélectionne sur l'AP, plus adaptée à une classe rare, et suit ROC-AUC et F1 en parallèle.
 
-Les 14 modèles documentés sont : `Zero-R`, K-NN, arbre de décision, forêt aléatoire, Naive Bayes gaussien, Naive Bayes de Bernoulli, SVM, régression logistique, Gradient Boosting, Extra Trees, AdaBoost, Bagging, K-NN en métrique cosinus et régression logistique avec `SelectKBest` intégré au Pipeline. `XGBoost` reste optionnel selon les dépendances installées. Aucun réseau de neurones ni LLM n'est utilisé comme modèle prédictif.
+Les 14 configurations documentées sont : `Zero-R`, K-NN, arbre de décision, forêt aléatoire, Naive Bayes gaussien, Naive Bayes de Bernoulli, SVM, régression logistique, Gradient Boosting, Extra Trees, AdaBoost, Bagging, K-NN en métrique cosinus et régression logistique avec `SelectKBest` intégré au Pipeline. Seules 9 variantes figurent dans les CSV de résultats versionnés. `XGBoost` est déclaré comme dépendance optionnelle mais absent de l'environnement de référence ; le code désactive proprement cette extension et elle n'est donc pas rapportée. Aucun réseau de neurones ni LLM n'est utilisé comme modèle prédictif.
 
 ### 6.2 Réglage, seuil et incertitude
 
@@ -137,7 +137,7 @@ Chaque modèle est réglé par `GridSearchCV` ou `RandomizedSearchCV` avec valid
 
 `DecisionTree` est retenu par ce protocole avec F1 CV = 0,1365 ± 0,0230, F1 test = 0,1230 et ROC-AUC = 0,5406. L'écart avec `ZeroR` reste faible : ce résultat doit être lu comme une preuve de faisabilité, pas comme une performance opérationnelle.
 
-### 7.2 Analyse étendue — 14 modèles et seuil optimisé
+### 7.2 Analyse étendue — 14 configurations définies et seuil optimisé
 
 | Modèle | AP CV | ROC-AUC test | PR-AUC test | Seuil | F1 au seuil |
 |---|---:|---:|---:|---:|---:|
@@ -207,7 +207,7 @@ La silhouette de DBSCAN est la plus élevée mais s'accompagne de 1 394 points c
 
 | Contrôle | Commande | Résultat |
 |---|---|---|
-| Suite de tests | `python -m pytest tests -q` | 68 tests verts |
+| Suite de tests | `python -m pytest tests -q` | 79 tests verts |
 | Pipeline du guide | `python scripts/train_pipeline.py` | 6 modèles, artefact `best_model.joblib` (ignoré) |
 | Analyse étendue | `python scripts/train_models.py` | CSV de métriques et IC bootstrap |
 | Outliers | `python scripts/run_outliers.py` | `results/outliers_report.csv`, figure 36 |
@@ -215,19 +215,19 @@ La silhouette de DBSCAN est la plus élevée mais s'accompagne de 1 394 points c
 | Explicabilité | `python scripts/run_explainability.py` | `results/explainability_top3.csv`, figure 42 |
 | Rapport PDF | `python scripts/generate_rapport.py` | `docs/Rapport_MiniProject.pdf` et `docs/Rapport_Projet.pdf` |
 
-Les sources CSV, les figures et ce rapport sont versionnés ; les modèles `joblib`, les JSON de métriques et les données traitées sont régénérés puis ignorés par Git. Toutes les expériences utilisent la graine 42. Les 14 tests ajoutés au lot 4 couvrent les modèles étendus (méthodes cosinus, ensembles, `SelectKBest` dans le Pipeline) et l'explicabilité (déterminisme, refus de la cible et de l'identifiant, recombinaison des variables).
+Les sources CSV, les figures et ce rapport sont versionnés ; les modèles `joblib`, les JSON de métriques et les données traitées sont régénérés puis ignorés par Git. Toutes les expériences utilisent la graine 42. Les tests couvrent les modèles étendus (méthodes cosinus, ensembles, `SelectKBest` dans le Pipeline), l'explicabilité (déterminisme, refus de la cible et de l'identifiant, recombinaison des variables) et les contrats de l'interface.
 
 ## 11. Limites et perspectives
 
 - Le jeu étant **synthétique**, les performances ne peuvent pas être transférées à une organisation réelle sans validation externe ; aucune décision RH ne doit être prise à partir de ces résultats.
 - La classe positive représentant 9 % des lignes, le F1 reste sensible au seuil ; un coût par fausse alerte devrait être spécifié avant déploiement.
 - Les tailles d'effet observées sont faibles et la PR-AUC plafonne à 0,1732 : la marge d'amélioration par de nouveaux modèles est probablement limitée sans nouvelles variables.
-- L'interface Streamlit est développée séparément ; le contrat de probabilité de la classe `Yes` et les six clés historiques doivent rester stables lors de son intégration.
+- L'interface Streamlit est livrée dans le lot 6 ; le contrat de probabilité de la classe `Yes` et les six clés historiques restent stables, et l'artefact historique `Pipeline` nu est normalisé au chargement en attendant sa régénération au format bundle.
 - Les groupes non supervisés sont descriptifs : leur lecture en termes de risque est postérieure à l'ajustement et ne constitue pas une règle de décision.
 
 ## 12. Conclusion
 
-Le projet livre une chaîne complète et vérifiable, du jeu brut au rapport PDF, avec des contrats de données explicites, une prévention des fuites par pipelines scikit-learn, une comparaison de 14 modèles supervisés et de 7 méthodes non supervisées, ainsi qu'une explicabilité locale centralisée. Le meilleur modèle de l'analyse étendue, `Gradient Boosting`, atteint une ROC-AUC de 0,6648 et une PR-AUC de 0,1732 au seuil optimisé, contre 0,5000 et 0,0905 pour la référence `Zero-R`. Ces résultats, bornés par des intervalles de confiance et confirmés par 68 tests automatisés, constituent une base honnête pour la suite du mini-projet, en particulier l'intégration de l'interface et l'évaluation sur un jeu externe.
+Le projet livre une chaîne complète et vérifiable, du jeu brut au rapport PDF, avec des contrats de données explicites, une prévention des fuites par pipelines scikit-learn, une comparaison de 14 configurations supervisées définies (9 variantes évaluées) et de 7 méthodes non supervisées, ainsi qu'une explicabilité locale centralisée. Le meilleur modèle de l'analyse étendue, `Gradient Boosting`, atteint une ROC-AUC de 0,6648 et une PR-AUC de 0,1732 au seuil optimisé, contre 0,5000 et 0,0905 pour la référence `Zero-R`. Ces résultats, bornés par des intervalles de confiance et confirmés par 79 tests automatisés, constituent une base honnête pour la suite du mini-projet, en particulier l'évaluation sur un jeu externe.
 
 ## Annexe A — Traçabilité des lots
 
@@ -238,9 +238,10 @@ Le projet livre une chaîne complète et vérifiable, du jeu brut au rapport PDF
 | 2 | `feature/lot2-outliers-avances` | #11 | quatre méthodes de détection des outliers |
 | 3 | `feature/lot3-clustering-avance` | #12 | choix de k, K-Medoids, DIANA, dendrogramme |
 | 4 | `feature/lot4-modeles-explicabilite` | #13 | modèles étendus, SHAP, correctif du pipeline du guide |
-| 5 | `feature/lot5-rapport-scientifique` | voir `docs/PLAN_PROJET.md` | rapport scientifique PDF et source versionnée |
+| 5 | `feature/lot5-rapport-scientifique` | #14 (mergée) | rapport scientifique PDF et source versionnée |
+| 6 | `feature/lot6-interface-streamlit` | #15 (mergée) | interface Streamlit alignée sur les contrats ML |
 
-Chaque lot a fait l'objet d'une branche dédiée, d'un commit unique, d'une pull request distincte vers `Anwar77-b:main` et d'une demande de review à `Anwar77-b`. Aucune pull request n'a été mergée par l'agent ; les décisions de merge appartiennent au propriétaire du dépôt.
+Chaque lot a fait l'objet d'une branche dédiée, d'un commit unique, d'une pull request distincte vers `Anwar77-b:main` et d'une demande de review à `Anwar77-b`. Les PR des lots 5 et 6 ont été mergées par le propriétaire ; les décisions de merge des autres lots lui appartiennent également.
 
 ## Annexe B — Livrables du rapport
 

@@ -44,7 +44,7 @@ Les codes ci-dessous sont des **valeurs par défaut** au format `IASDxx → rôl
 | IASD05 | Tests, qualité et reproductibilité | 3 |
 | IASD06 | Documentation, rapport et métriques | 4, 6 |
 
-La partie interface (`app/**`, `.streamlit/**`, `src/app.py`) appartient à un autre membre et est **hors périmètre** des lots suivants.
+La partie interface (`app/**`, `.streamlit/**`) est tracée dans le lot 6 ; les lots 0 à 5 ci-dessous ne la modifient pas.
 
 ---
 
@@ -57,8 +57,8 @@ La partie interface (`app/**`, `.streamlit/**`, `src/app.py`) appartient à un a
 | 2 | 05 – 11 déc 2026 | Non supervisé + hygiène des artefacts générés | `feature/lot2-unsupervised`, `feature/lot2-gitignore` | #5 et #6 (mergées) |
 | 3 | 12 – 18 déc 2026 | Suite de tests et contrats de données | `feature/lot3-tests` | #7 (mergée) |
 | 4 | 19 – 25 déc 2026 | Documentation, README, dictionnaire, mapping CRISP-DM | `feature/lot4-documentation` | #8 (mergée) |
-| 5 | 26 déc 2026 – 01 janv 2027 | Optimisation, seuil, bootstrap, classement multicritère | `feature/lot5-optimisation` | à créer |
-| 6 | 02 – 08 janv 2027 | Rapport scientifique final et clôture | `feature/lot6-rapport` | à créer |
+| 5 | 26 déc 2026 – 01 janv 2027 | Rapport scientifique final et livrables PDF | `feature/lot5-rapport` | #14 (mergée) |
+| 6 | 02 – 08 janv 2027 | Interface Streamlit alignée sur les contrats ML | `feature/lot6-interface-streamlit` | #15 (mergée) |
 
 Le cycle est itératif : les résultats du lot 5 peuvent conduire à réajuster la préparation et la modélisation des lots 1 et 2.
 
@@ -74,9 +74,9 @@ Le cycle est itératif : les résultats du lot 5 peuvent conduire à réajuster 
 | Validation croisée | `StratifiedKFold(n_splits >= 5, shuffle=True, random_state=...)` |
 | Sélection modèle | F1 moyen CV pour le pipeline du guide, AP moyen CV pour l'analyse étendue ; test jamais utilisé pour choisir |
 | Métriques reporting | F1, AP, ROC-AUC, matrices de confusion, IC bootstrap |
-| Suite de tests | `python -m pytest tests -q` → **68 passed** (tout écart doit être expliqué dans la PR) |
+| Suite de tests | `python -m pytest tests -q` → **79 passed** (tout écart doit être expliqué dans la PR) |
 | Livrables graphiques | 5 notebooks, 42 figures versionnées |
-| Modèles | 14 modèles supervisés (dont Zero-R), 7 méthodes non supervisées (KMeans, PCA, agglomératif, DBSCAN, K-Medoids, DIANA, cosinus) |
+| Modèles | 14 configurations supervisées définies (dont Zero-R), 9 variantes évaluées ; 7 méthodes non supervisées (KMeans, PCA, agglomératif, DBSCAN, K-Medoids, DIANA, cosinus) |
 | Traçabilité | 1 branche `feature/lotN-*`, 1 commit, 1 PR par lot, revue de `Anwar77-b` |
 | Anonymat | 0 nom, prénom, matricule ou adresse personnelle dans les fichiers suivis |
 

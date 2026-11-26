@@ -471,10 +471,15 @@ if selected_section == "Données filtrées":
         hide_index=True,
     )
     
-    csv_bytes = filtered.to_csv(index=False).encode("utf-8")
+    # Export anonymisé : ni identifiant ni cible ne quittent l'application.
+    exported_df = filtered.drop(columns=[
+        col for col in ("EmployeeID", "Attrition") if col in filtered.columns
+    ])
+    csv_bytes = exported_df.to_csv(index=False).encode("utf-8")
+    st.caption("L'export exclut volontairement `EmployeeID` et `Attrition`.")
     st.download_button(
-        label="📥 Exporter la sélection en CSV",
+        label="📥 Exporter la sélection en CSV (anonymisé)",
         data=csv_bytes,
-        file_name="donnees_filtrees_attrition.csv",
+        file_name="donnees_filtrees_attrition_anonymise.csv",
         mime="text/csv",
     )

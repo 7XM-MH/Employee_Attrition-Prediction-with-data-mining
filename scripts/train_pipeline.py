@@ -8,7 +8,7 @@ Le script entraîne les six modèles du cours (Zero-R, K-NN, arbre de décision,
 forêt aléatoire, Naive Bayes, SVM) et sauvegarde :
 
     models/<NomModele>_pipeline.joblib   (un seul Pipeline : préprocesseur + classifieur)
-    models/best_model.joblib             (copie du meilleur modèle selon la CV)
+    models/best_model.joblib             (bundle {model, threshold} du meilleur modèle CV)
     results/metrics.json                 (métriques de TEST, evaluation finale)
     results/roc_data.json
     results/confusion_matrices.json      (ordre des classes : [0, 1] = [No, Yes])
@@ -46,7 +46,7 @@ import time
 
 import numpy as np
 import pandas as pd
-from joblib import dump, load
+from joblib import dump
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -74,6 +74,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
+from src.models import load_bundle, save_bundle
 from src.preprocessing import (
     BINARY_COLS,
     FEATURE_COLS,
@@ -460,11 +461,17 @@ def main() -> None:
 
     # 6. Meilleur modèle et artefacts ----------------------------------------
     print("[6/6] Sauvegarde des artefacts …\n")
-    best_path = MODELS_DIR / "best_model.joblib"
-    dump(best_pipe, best_path)
+    # Le fichier applicatif est un bundle {model, threshold}, pas un Pipeline nu :
+    # c'est le contrat consommé par src.models.load_bundle et par l'interface.
+    best_path = save_bundle(
+        best_model_name,
+        best_pipe,
+        0.5,  # aucun optimisation de seuil dans ce pipeline : décision à 0,5
+        {"selection_criterion": "mean_cv_f1", "selection_score": best_cv_f1},
+    )
     # Vérification immédiate : le fichier doit se charger et prédire une probabilité finie.
-    reloaded = load(best_path)
-    check_proba = reloaded.predict_proba(X_test.head(1))[0, positive_class_index(reloaded)]
+    reloaded = load_bundle(best_path)
+    check_proba = reloaded["model"].predict_proba(X_test.head(1))[0, positive_class_index(reloaded["model"])]
     if not np.isfinite(check_proba):
         raise RuntimeError("predict_proba du meilleur modèle renvoie une valeur non finie.")
     print(f"  ★ Meilleur modèle (sélection CV F1) : {best_model_name} "

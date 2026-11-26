@@ -57,3 +57,49 @@ def test_bundle_roundtrip_and_prediction(data, tmp_path):
     rec = X.iloc[0].to_dict()
     out = predict_employee(bundle, rec)
     assert 0 <= out["probability"][0] <= 1 and out["prediction"][0] in (0, 1) and out["threshold"] == 0.3
+
+
+def test_legacy_pipeline_bundle_is_normalised(data, tmp_path, monkeypatch):
+    """An old best_model.joblib containing a bare Pipeline must stay usable."""
+    import joblib
+    from src import models as models_module
+    from src.models import _as_bundle
+
+    X, y = data
+    model = clone(get_searches()["Régression logistique"].estimator).fit(X, y)
+    path = tmp_path / "legacy.joblib"
+    joblib.dump(model, path)
+    # The historical guide pipeline has no optimized threshold: 0.5 is authoritative.
+    monkeypatch.setattr(models_module, "RESULTS_DIR", tmp_path / "no-results")
+    bundle = _as_bundle(joblib.load(path))
+    assert bundle["model"] is not None
+    assert bundle["threshold"] == 0.5
+    assert bundle["features"] == FEATURE_COLS
+    out = predict_employee(bundle, X.iloc[0].to_dict())
+    assert out["prediction"][0] in (0, 1) and out["threshold"] == 0.5
+
+
+def test_predict_employee_ignores_ids_and_target(data):
+    """EmployeeID and Attrition must never reach the model."""
+    X, y = data
+    model = clone(get_searches()["Régression logistique"].estimator).fit(X, y)
+    bundle = {"model": model, "threshold": 0.5}
+    rec = X.iloc[0].to_dict()
+    expected = predict_employee(bundle, rec)
+    polluted = dict(rec)
+    polluted["EmployeeID"] = "EMP0001"
+    polluted["Attrition"] = 1
+    actual = predict_employee(bundle, polluted)
+    assert list(actual["probability"]) == list(expected["probability"])
+    assert list(actual["prediction"]) == list(expected["prediction"])
+
+
+def test_predict_employee_requires_all_model_features(data):
+    """A missing model feature must fail loudly instead of being guessed."""
+    X, y = data
+    model = clone(get_searches()["Régression logistique"].estimator).fit(X, y)
+    bundle = {"model": model, "threshold": 0.5}
+    incomplete = X.iloc[0].to_dict()
+    incomplete.pop(FEATURE_COLS[0])
+    with pytest.raises(KeyError):
+        predict_employee(bundle, incomplete)

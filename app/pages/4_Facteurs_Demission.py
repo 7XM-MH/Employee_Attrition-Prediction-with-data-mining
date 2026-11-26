@@ -74,11 +74,16 @@ selected_section = st.radio(
 
 # ── Tab 1: Feature Importances ─────────────────────────────────────────
 if selected_section == "Importance des variables":
-    st.markdown("#### 🌲 Importance intrinsèque des caractéristiques (Gini / Impureté)")
-    st.caption("Calculée à partir des arbres de décision et forêts aléatoires entraînés sur le jeu de données.")
+    st.markdown("#### 🌲 Importance des caractéristiques (Gini ou permutation)")
+    st.caption("Selon le modèle, l'importance est intrinsèque (Gini) ou issue d'une permutation : les valeurs négatives sont possibles.")
 
-    if feature_importances is not None and len(feature_importances) > 0:
-        available_models = list(feature_importances.keys())
+    usable_importances = {
+        name: values
+        for name, values in (feature_importances or {}).items()
+        if isinstance(values, dict) and len(values) >= 2
+    }
+    if usable_importances:
+        available_models = list(usable_importances.keys())
         selected_model = st.selectbox(
             "Algorithme à analyser :",
             options=available_models,
@@ -86,7 +91,7 @@ if selected_section == "Importance des variables":
             key="fi_model_select",
         )
 
-        fi = feature_importances[selected_model]
+        fi = usable_importances[selected_model]
         fi_df = (
             pd.DataFrame([{"Variable": k, "Importance": v} for k, v in fi.items()])
             .sort_values("Importance", ascending=True)
@@ -98,9 +103,9 @@ if selected_section == "Importance des variables":
 
         k1, k2, k3 = st.columns(3)
         with k1:
-            kpi_card("1er Facteur Clé", top_var["Variable"], delta=f"{top_var['Importance']*100:.1f}% d'importance", border_color=COLOR_YES)
+            kpi_card("1er Facteur Clé", top_var["Variable"], delta=f"score {top_var['Importance']:.4f}", border_color=COLOR_YES)
         with k2:
-            kpi_card("2ème Facteur Clé", top2_var["Variable"], delta=f"{top2_var['Importance']*100:.1f}% d'importance", border_color=PRIMARY_COLOR)
+            kpi_card("2ème Facteur Clé", top2_var["Variable"], delta=f"score {top2_var['Importance']:.4f}", border_color=PRIMARY_COLOR)
         with k3:
             kpi_card("Variables Analysées", f"{len(fi_df)} features", border_color=SECONDARY_COLOR)
 
@@ -120,7 +125,7 @@ if selected_section == "Importance des variables":
         fig_fi.update_layout(
             coloraxis_showscale=False,
             margin=dict(t=50, b=30, l=150, r=30),
-            xaxis_title="Score d'importance relative (somme = 1.0)",
+            xaxis_title="Score d'importance (Gini ou permutation)",
             yaxis_title="",
         )
         st.plotly_chart(fig_fi, use_container_width=True)
