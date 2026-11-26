@@ -6,6 +6,8 @@
 > [!WARNING]
 > Projet **académique et fictif**. Les données sont synthétiques. Aucune prédiction ne doit être utilisée pour une décision RH réelle.
 
+> Pilotage : [plan de projet](docs/PLAN_PROJET.md) · [convention de contribution](CONTRIBUTING.md) · [métriques](docs/METRIQUES.md) · [inventaire des résultats](results/README_resultats.md).
+
 ---
 
 ## 1. Compréhension métier
@@ -45,7 +47,7 @@ Références détaillées : [`DISCOVERY.md`](DISCOVERY.md) et [`docs/data_dictio
 |---|---|
 | **1. Compréhension métier** | §1 ci-dessus, [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md) |
 | **2. Compréhension des données** | [`DISCOVERY.md`](DISCOVERY.md), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb), [`results/descriptive_stats.csv`](results/descriptive_stats.csv), figures `01` à `08` |
-| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/02_statistical_analysis.ipynb`](notebooks/02_statistical_analysis.ipynb) |
+| **3. Préparation des données** | [`src/preprocessing.py`](src/preprocessing.py), [`scripts/run_preprocessing.py`](scripts/run_preprocessing.py), [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`notebooks/02_preprocessing_encoding.ipynb`](notebooks/02_preprocessing_encoding.ipynb), [`notebooks/01_eda_and_cleaning.ipynb`](notebooks/01_eda_and_cleaning.ipynb) |
 | **4. Modélisation** | [`scripts/train_pipeline.py`](scripts/train_pipeline.py) (pipeline du guide), [`scripts/train_models.py`](scripts/train_models.py) + [`src/models.py`](src/models.py) (analyse étendue), [`results/cv_summary.csv`](results/cv_summary.csv), figures `09` à `16` |
 | **5. Évaluation** | [`results/model_comparison.csv`](results/model_comparison.csv), `results/*.json`, [`tests/`](tests/), figures `17` à `23` |
 | **6. Déploiement et surveillance** | Modèles `joblib` dans `models/`, application Streamlit dans `app/` ; surveillance et concept drift discutés en limite (§9) |
@@ -59,14 +61,20 @@ Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à a
 | Fichier | Rôle |
 |---|---|
 | `notebooks/01_eda_and_cleaning.ipynb` | EDA, audit qualité, détection/écrêtage IQR des outliers, distributions, corrélations |
-| `notebooks/02_statistical_analysis.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
+| `notebooks/01_eda_and_cleaning.ipynb` | χ², Mann-Whitney U, Spearman, ANOVA, correction Benjamini-Hochberg, tailles d'effet |
 | `notebooks/02_preprocessing_encoding.ipynb` | Encodage Y/X, normalisation, split train/test sans fuite |
 | `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, gain/lift, importance par permutation |
 | `scripts/run_preprocessing.py` | Prétraitement reproductible brut → `data/processed/` + `models/preprocessor.joblib` |
 | `scripts/train_pipeline.py` | Pipeline du guide : 6 modèles imposés, StratifiedKFold(5), artefacts JSON |
-| `scripts/train_models.py` | Analyse étendue : 9 modèles, recherche AP, bootstrap, optimisation du seuil |
+| `scripts/train_models.py` | Analyse étendue : 14 modèles, recherche AP, bootstrap, optimisation du seuil |
 | `scripts/run_unsupervised.py` | KMeans, PCA, agglomératif, DBSCAN |
+| [`scripts/run_unsupervised_advanced.py`](scripts/run_unsupervised_advanced.py) | Choix de k, K-Medoids, DIANA, cosinus, indices de validation → `results/clustering_advanced.csv` et figures 37 à 41 |
+| [`scripts/run_outliers.py`](scripts/run_outliers.py) | Détection des outliers : IQR, Z-score, Isolation Forest, LOF → `results/outliers_report.csv` et figure 36 |
+| [`scripts/run_explainability.py`](scripts/run_explainability.py) | Explicabilité locale SHAP (top 3 par employé) → `results/explainability_top3.csv` et figure 42 |
+| [`scripts/generate_rapport.py`](scripts/generate_rapport.py) | Rapport PDF depuis [`docs/rapport/rapport.md`](docs/rapport/rapport.md) → `docs/Rapport_MiniProject.pdf` et `docs/Rapport_Projet.pdf` |
 | `scripts/generate_figures.py`, `scripts/generate_notebooks.py` | Génération des livrables graphiques / notebooks |
+
+Analyse des outliers détaillée dans [`docs/OUTLIERS.md`](docs/OUTLIERS.md), avec la comparaison graphique [`reports/figures/36_outliers_methodes.png`](reports/figures/36_outliers_methodes.png).
 
 ---
 
@@ -103,7 +111,7 @@ Fichiers complémentaires : [`stat_spearman_paires.csv`](results/stat_spearman_p
 
 **Modèle retenu : `DecisionTree`** — F1 CV = 0,1365 ± 0,0230, F1 test = 0,1230, ROC-AUC = 0,5406. Son excédent par rapport à ZeroR reste faible : le signal prédictif de ce jeu synthétique est limité.
 
-### 6.2 Analyse étendue — 9 modèles et optimisation du seuil
+### 6.2 Analyse étendue — 14 modèles et optimisation du seuil
 
 `python scripts/train_models.py` — sélection sur l'**Average Precision** en CV 5 plis, intervalles de confiance bootstrap, seuil de décision optimisé, calibration, gain/lift, importance par permutation.
 
@@ -151,8 +159,10 @@ pip install -r requirements.txt
 
 python scripts/run_preprocessing.py   # données traitées + preprocessor.joblib
 python scripts/train_pipeline.py      # pipeline du guide (6 modèles)
-python scripts/train_models.py        # analyse étendue (9 modèles, plus long)
-python scripts/run_unsupervised.py    # clustering
+python scripts/train_models.py        # analyse étendue (14 modèles, plus long)
+python scripts/run_unsupervised.py    # clustering (4 modèles historiques)
+python scripts/run_unsupervised_advanced.py  # clustering avancé (lot 3)
+python scripts/run_outliers.py        # détection avancée des outliers
 pytest tests -q                       # suite de tests
 streamlit run app/Home.py             # application web
 ```
@@ -160,7 +170,7 @@ streamlit run app/Home.py             # application web
 Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par Git** (voir `.gitignore`) : ils sont recréés par les scripts ci-dessus. Les `.csv` de résultats et les figures de `reports/figures/` sont versionnés.
 
 > [!NOTE]
-> **État connu :** le refactoring de `src/preprocessing.py` a remplacé `ALL_FEATURES` par `FEATURE_COLS` et `load_raw_data()` par `load_raw(path)`. `scripts/train_pipeline.py`, `src/unsupervised.py` et trois fichiers de tests importent encore les anciens noms ; leur exécution échoue temporairement. Un correctif de compatibilité est prévu dans une PR séparée. Cette PR ne modifie que la documentation.
+> **État connu :** le refactoring de `src/preprocessing.py` a remplacé `ALL_FEATURES` par `FEATURE_COLS` et `load_raw_data()` par `load_raw(path)`. `src/unsupervised.py` est corrigé depuis le lot 3 (test de non-régression dans [`tests/test_unsupervised.py`](tests/test_unsupervised.py)). `scripts/train_pipeline.py` importe encore `ALL_FEATURES`, `DATA_PATH` et `prepare_data` : **sa commande de régénération supervisée ne fonctionne pas aujourd'hui**. Correctif prévu au lot 4, sans modification du code ML dans ce lot. Voir [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md).
 
 ---
 
@@ -171,20 +181,43 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | Pipeline end-to-end, ≥ 10 000 lignes, ≥ 10 attributs | ✅ |
 | Types et échelles de mesure, one-hot / ordinal, Z-score | ✅ [`docs/data_dictionary.md`](docs/data_dictionary.md) |
 | Outliers IQR + écrêtage | ✅ dataset + notebooks |
-| Outliers Z-score, Isolation Forest, LOF | ❌ non implémentés |
+| Outliers Z-score, Isolation Forest, LOF | ✅ [`docs/OUTLIERS.md`](docs/OUTLIERS.md), [`scripts/run_outliers.py`](scripts/run_outliers.py), figure [`36`](reports/figures/36_outliers_methodes.png) |
 | Similarités euclidienne / Manhattan | ✅ KNN, KMeans |
-| Similarité cosinus, Minkowski | ❌ non testées |
+| Similarité cosinus, Minkowski | ✅ cosinus testée (Minkowski hors périmètre) — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) |
 | Classification supervisée, CV 5 plis, métriques | ✅ |
 | K-NN, arbres, forêts, Naive Bayes, SVM | ✅ |
-| K-Medoids (PAM), DIANA, dendrogramme | ❌ hors lots livrés |
-| Choix de k pour KMeans (coude / silhouette) | ❌ k = 4 fixé |
+| Ensembles (Extra Trees, AdaBoost, Bagging), K-NN cosinus | ✅ [`src/models.py`](src/models.py), 14 modèles au total |
+| Sélection de variables dans le Pipeline (CV sans fuite) | ✅ `SelectKBest` dans [`src/models.py`](src/models.py) |
+| Explicabilité locale SHAP (top 3 facteurs) | ✅ [`src/explainability.py`](src/explainability.py), [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md), figure [`42`](reports/figures/42_shap_local.png) |
+| K-Medoids (PAM), DIANA, dendrogramme | ✅ [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figures [`39`](reports/figures/39_kmedoids_diana.png) et [`38`](reports/figures/38_dendrogramme.png) |
+| Choix de k pour KMeans (coude / silhouette) | ✅ k = 3 retenu — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figure [`37`](reports/figures/37_choix_k.png) |
 | Silhouette | ✅ |
-| Davies-Bouldin, indice de Dunn | ❌ |
+| Davies-Bouldin, indice de Dunn | ✅ [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figure [`40`](reports/figures/40_indices_clustering.png) |
 | Règles d'association (support, confiance) | ❌ hors périmètre du projet |
 | CRISP-DM en 6 étapes | ✅ §3 |
 | Déploiement `joblib`, application web | ✅ |
 | Surveillance / concept drift | ⚠️ documenté comme limite, non implémenté |
-| Rapport scientifique PDF | ⚠️ en cours (lot suivant) |
+| Rapport scientifique PDF | ✅ [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf) (15 pages, lots 0 à 4) et [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) |
+
+Livrables du lot 3 — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) et [`results/clustering_advanced.csv`](results/clustering_advanced.csv) :
+
+- [`37_choix_k.png`](reports/figures/37_choix_k.png) — inertie, silhouette et Davies-Bouldin selon k ;
+- [`38_dendrogramme.png`](reports/figures/38_dendrogramme.png) — dendrogramme de Ward sur un échantillon de 2 000 lignes ;
+- [`39_kmedoids_diana.png`](reports/figures/39_kmedoids_diana.png) — partitions K-Medoids et DIANA en projection PCA ;
+- [`40_indices_clustering.png`](reports/figures/40_indices_clustering.png) — comparaison des indices pour les sept méthodes ;
+- [`41_clusters_cosinus.png`](reports/figures/41_clusters_cosinus.png) — K-Means en géométrie cosinus.
+
+Livrables du lot 4 — [`src/models.py`](src/models.py), [`src/explainability.py`](src/explainability.py), [`results/explainability_top3.csv`](results/explainability_top3.csv) :
+
+- [`42_shap_local.png`](reports/figures/42_shap_local.png) — contribution SHAP moyenne des facteurs locaux sur 200 employés ;
+- les six clés du guide (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) restent inchangées dans [`scripts/train_pipeline.py`](scripts/train_pipeline.py), dont les imports ont été réparés ;
+- `pytest tests -q` : **68 tests verts** (14 nouveaux tests pour les modèles étendus et l’explicabilité).
+
+Livrables du lot 5 — [`docs/rapport/rapport.md`](docs/rapport/rapport.md), [`scripts/generate_rapport.py`](scripts/generate_rapport.py) :
+
+- [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf) — rapport scientifique de 15 pages intégrant les résultats des lots 0 à 4, 16 figures et les intervalles de confiance ;
+- [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) — copie d'alias maintenue à jour pour les liens existants ;
+- le modèle de 47 pages [`Rapport_MiniProject_apercu.pdf`](docs/Rapport_MiniProject_apercu.pdf) est conservé tel quel.
 
 ---
 
@@ -205,10 +238,10 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 ├── data/processed/            # .gitkeep + données générées (ignorées)
 ├── notebooks/                 # 4 notebooks
 ├── src/                       # preprocessing, models, evaluation, stats_tests, unsupervised…
-├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised…
+├── scripts/                   # run_preprocessing, train_pipeline, train_models, run_unsupervised, run_outliers…
 ├── models/                    # .gitkeep + .joblib générés (ignorés)
 ├── results/                   # CSV versionnés + JSON générés (ignorés)
-├── reports/figures/           # 23 figures
+├── reports/figures/           # 41 figures
 ├── docs/                      # guide, dictionnaire de données, figures
 ├── app/                       # application Streamlit (interface)
 └── tests/                     # suite pytest
