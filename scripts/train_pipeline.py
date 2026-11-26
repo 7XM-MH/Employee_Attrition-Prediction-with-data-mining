@@ -75,18 +75,26 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from src.preprocessing import (
-    ALL_FEATURES,
-    CATEGORICAL_FEATURES,
-    DATA_PATH,
+    BINARY_COLS,
+    FEATURE_COLS,
     ID_COL,
-    NUMERICAL_FEATURES,
+    NOMINAL_COLS,
+    NUMERIC_COLS,
+    ORDINAL_COLS,
     TARGET,
-    prepare_data,
 )
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+# Le schéma a été renommé dans src.preprocessing (lot 2) : les anciens alias
+# ALL_FEATURES / DATA_PATH / prepare_data n'existent plus. On garde le contrat
+# historique de CE script uniquement, sans modifier le module partagé.
+DATA_PATH = PROJECT_ROOT / "data" / "raw" / "Employee_Attrition_DataSet.csv"
+ALL_FEATURES = FEATURE_COLS
+NUMERICAL_FEATURES = NUMERIC_COLS + ORDINAL_COLS
+CATEGORICAL_FEATURES = NOMINAL_COLS + BINARY_COLS
+
 MODELS_DIR = PROJECT_ROOT / "models"
 RESULTS_DIR = PROJECT_ROOT / "results"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
@@ -101,6 +109,17 @@ TRAIN_COMMAND = "python scripts/train_pipeline.py"
 TARGET_VALUES = {"No": 0, "Yes": 1}
 CLASS_LABELS = ["No", "Yes"]
 CLASS_ORDER = [TARGET_VALUES[label] for label in CLASS_LABELS]
+
+
+def prepare_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
+    """Retire EmployeeID de X et encode la cible No->0 / Yes->1.
+
+    L'encodage est fait ici, avant le split, car il est déterministe et
+    n'apprend aucune statistique : il n'y a donc aucun risque de fuite.
+    """
+    X = df[ALL_FEATURES].copy()
+    y = df[TARGET].map(TARGET_VALUES).astype(int)
+    return X, y
 
 
 # ---------------------------------------------------------------------------

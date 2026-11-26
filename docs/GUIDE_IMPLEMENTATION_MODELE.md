@@ -21,19 +21,19 @@ Il contient 10 000 lignes et 14 colonnes. La cible reelle s'appelle `Attrition` 
 
 La classe positive est `Yes`, qui represente environ 9 % des lignes. Le jeu est synthetique, sans valeurs manquantes ni doublons selon la decouverte du projet. Les colonnes `Gender`, `MaritalStatus`, `RemoteWork` et `JobRole` mentionnees dans certains exemples de specification ne sont pas dans ce CSV : ne pas les ajouter au formulaire ou au modele sans changement valide du jeu de donnees et de son contrat.
 
-Le depot contient desormais `src/preprocessing.py`, `src/models.py`, `src/evaluation.py`, `scripts/train_pipeline.py`, `scripts/train_models.py`, `scripts/run_unsupervised.py`, `scripts/generate_figures.py` et les cinq pages sous `app/pages/`. Cinq notebooks sont presents et non vides : `notebooks/01_eda_and_cleaning.ipynb`, `notebooks/02_preprocessing_encoding.ipynb`, `notebooks/03_model_training_evaluation.ipynb`, `notebooks/04_optimization.ipynb`, `notebooks/05_metrics_analysis.ipynb`. Le projet documente neuf modeles supervises (Zero-R, six modeles du cours et deux extensions) et quatre methodes non supervisées. Les CSV de resultats et les 35 figures sont versionnes ; les `.joblib`, `results/*.json` et `data/processed/*.csv` sont generes puis ignorés par Git (voir [`results/README_resultats.md`](../results/README_resultats.md)). La suite de tests comporte 40 tests verts. `DISCOVERY.md` contient une synthese utile, mais certaines indications d'etat peuvent devenir obsoletes : verifiez les fichiers actuels avant de vous y fier.
+Le depot contient desormais `src/preprocessing.py`, `src/models.py`, `src/evaluation.py`, `scripts/train_pipeline.py`, `scripts/train_models.py`, `scripts/run_unsupervised.py`, `scripts/generate_figures.py` et les cinq pages sous `app/pages/`. Cinq notebooks sont presents et non vides : `notebooks/01_eda_and_cleaning.ipynb`, `notebooks/02_preprocessing_encoding.ipynb`, `notebooks/03_model_training_evaluation.ipynb`, `notebooks/04_optimization.ipynb`, `notebooks/05_metrics_analysis.ipynb`. Le projet documente quatorze modeles supervises (Zero-R, six modeles du cours et sept extensions : regression logistique, Gradient Boosting, K-NN cosinus, Extra Trees, AdaBoost, Bagging et selection de variables), plus `XGBoost` si la dependance est installee, et sept methodes non supervisées. Les CSV de resultats et les 42 figures sont versionnes ; les `.joblib`, `results/*.json` et `data/processed/*.csv` sont generes puis ignorés par Git (voir [`results/README_resultats.md`](../results/README_resultats.md)). La suite de tests comporte 68 tests verts. `DISCOVERY.md` contient une synthese utile, mais certaines indications d'etat peuvent devenir obsoletes : verifiez les fichiers actuels avant de vous y fier.
 
 ## 2. Contrats d'integration a respecter
 
 Les pages et utilitaires existants attendent les conventions suivantes :
 
-1. **Entrees du modele** : un `pandas.DataFrame` dont les colonnes sont exactement les 12 variables de `ALL_FEATURES` definies dans `src/preprocessing.py` et `app/utils.py`. L'ordre peut etre normalise avant `predict`, mais les noms et types doivent rester coherents.
+1. **Entrees du modele** : un `pandas.DataFrame` dont les colonnes sont exactement les 12 variables de `FEATURE_COLS` definies dans `src/preprocessing.py`. `ALL_FEATURES` reste l'alias local utilise par `scripts/train_pipeline.py` et `app/utils.py` ; ne pas creer de troisieme schema. L'ordre peut etre normalise avant `predict`, mais les noms et types doivent rester coherents.
 2. **Cible** : convertir `No` en `0` et `Yes` en `1` pendant l'entrainement. Pour l'affichage, `0` correspond a « Non / reste » et `1` a « Oui / quitte ». Ne pas inclure `Attrition` ni `EmployeeID` dans les donnees envoyees au modele.
 3. **Pipeline sauvegarde** : sauvegarder le preprocesseur et le classifieur ensemble dans un seul objet `sklearn.pipeline.Pipeline`. Ainsi, la prediction individuelle et la prediction en lot appellent directement `predict(X)` et `predict_proba(X)` sur les colonnes originales.
 4. **Probabilite de depart** : toutes les pages de prediction utilisent la probabilite de la classe positive a l'indice correct (`Yes`/`1`), pas simplement la premiere colonne de `predict_proba`. Verifier `classes_` si l'ordre des classes n'est pas garanti.
 5. **Nom du modele par defaut** : l'utilitaire `app.utils.load_model("best_model")` cherche `models/best_model.joblib`. Les modeles individuels sont nommes, par exemple, `models/RandomForest_pipeline.joblib`.
 6. **Chemins** : construire les chemins depuis `Path(__file__).resolve()` ou depuis une racine de projet partagee. Ne pas coder de chemin absolu propre a un ordinateur.
-7. **Chargement de donnees** : les CSV charges en lot doivent avoir toutes les colonnes de `ALL_FEATURES`. L'identifiant et la cible sont facultatifs dans le fichier de lot, mais ils ne doivent pas etre envoyes au pipeline.
+7. **Chargement de donnees** : les CSV charges en lot doivent avoir toutes les colonnes de `FEATURE_COLS` (alias `ALL_FEATURES` dans le script et l'application). L'identifiant et la cible sont facultatifs dans le fichier de lot, mais ils ne doivent pas etre envoyes au pipeline.
 
 Les definitions des variables figurent a la fois dans `src/preprocessing.py` et `app/utils.py`. Toute modification de schema doit mettre ces definitions et les formulaires/validations des pages a jour ensemble. Eviter de maintenir un troisieme schema independant dans le script d'entrainement.
 
@@ -45,7 +45,11 @@ Le point d'entree d'entrainement est :
 scripts/train_pipeline.py
 ```
 
-Le pipeline doit rester classique et interpretable au niveau des methodes du cours : Zero-R (`DummyClassifier`), K-NN, arbre de decision, foret aleatoire, Naive Bayes et SVM. L'analyse etendue ajoute la regression logistique et le Gradient Boosting, soit neuf modeles documentes ; `XGBoost` reste optionnel si la dependance est installee. N'utiliser ni reseau de neurones, ni LLM comme modele predictif.
+Le pipeline doit rester classique et interpretable au niveau des methodes du cours : Zero-R (`DummyClassifier`), K-NN, arbre de decision, foret aleatoire, Naive Bayes et SVM. Ces six cles (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) sont immuables car l'application les lit directement. L'analyse etendue (`scripts/train_models.py`, `src/models.py`) ajoute la regression logistique, le Gradient Boosting, le K-NN en metrique cosinus, Extra Trees, AdaBoost, Bagging et une selection de variables `SelectKBest` **a l'interieur du Pipeline** (donc refitee dans chaque pli de validation croisee) : quatorze modeles documentes au total. `XGBoost` reste optionnel si la dependance est installee. N'utiliser ni reseau de neurones, ni LLM comme modele predictif.
+
+### Explicabilite locale
+
+`src/explainability.py` centralise l'explication des predictions individuelles avec SHAP : `explain_local(bundle, record, top_k=3)` renvoie les trois variables métier de `FEATURE_COLS` qui influencent le plus la probabilite de `Yes`, avec le signe de leur contribution. Les modalites one-hot sont recombinees dans leur variable d'origine. `EmployeeID` et `Attrition` sont refusés en entree. `python scripts/run_explainability.py` regenere `results/explainability_top3.csv` et `reports/figures/42_shap_local.png` sur 200 employs du jeu de test, sans ecrire d'artefact `joblib`. SHAP est une aide a l'interpretation, pas un modele predictif et pas une preuve de causalite.
 
 ### Ordre des operations
 
@@ -91,7 +95,7 @@ La page d'accueil peut avoir besoin du nom et du critere de selection du meilleu
 - **Dashboard (`app/pages/1_Dashboard.py`)** : lire les colonnes depuis le dataset reel ; les distributions et filtres doivent utiliser les modalites presentes dans les donnees, pas des variables hypothetique de l'exemple.
 - **Prediction individuelle (`app/pages/2_Prediction.py`)** : construire un DataFrame d'une ligne, avec les noms des 12 features et des types compatibles ; afficher prediction, probabilite de `Yes` et seuil de risque clairement. Le modele charge doit rester le pipeline complet.
 - **Performance (`app/pages/3_Performance_Modeles.py`)** : lire les JSON de `results/` selon le contrat ci-dessus. Les metriques de test et les scores de CV doivent etre nommes separement.
-- **Facteurs (`app/pages/4_Facteurs_Demission.py`)** : les importances natives existent pour les arbres/foret. Pour K-NN, SVM ou Naive Bayes, employer une methode explicable compatible, comme une importance par permutation sur un echantillon, ou indiquer clairement que la mesure n'est pas disponible. SHAP est une aide d'explicabilite, pas un modele predictif.
+- **Facteurs (`app/pages/4_Facteurs_Demission.py`)** : les importances natives existent pour les arbres/foret. Pour K-NN, SVM ou Naive Bayes, employer une methode explicable compatible, comme une importance par permutation sur un echantillon, ou indiquer clairement que la mesure n'est pas disponible. Pour l'explicabilité locale, utiliser `src.explainability.explain_local` plutôt que de refaire un calcul SHAP dans chaque notebook. SHAP est une aide d'explicabilite, pas un modele predictif.
 - **Prediction en lot (`app/pages/5_Prediction_en_lot.py`)** : valider toutes les colonnes avant prediction, signaler celles manquantes, ignorer ou retirer explicitement les colonnes supplementaires, et aligner le DataFrame sur `ALL_FEATURES`. Trier les resultats selon la probabilite de classe `Yes`.
 
 Le pied de page et les resultats doivent rappeler que les donnees sont synthetiques et que le modele ne convient pas aux decisions reelles de ressources humaines. Les scores ne prouvent pas la causalite et ne doivent pas etre interpretes comme une evaluation individuelle fiable.
@@ -113,9 +117,9 @@ Le pied de page et les resultats doivent rappeler que les donnees sont synthetiq
    .\.venv\Scripts\python.exe .\scripts\train_pipeline.py
    ```
 
-   Pour l'analyse etendue, lancer `python scripts/train_models.py` ; pour le clustering, `python scripts/run_unsupervised.py`. L'inventaire complet des fichiers generes et leurs producteurs est dans [`results/README_resultats.md`](../results/README_resultats.md).
+   Pour l'analyse etendue, lancer `python scripts/train_models.py` ; pour le clustering, `python scripts/run_unsupervised.py` puis `python scripts/run_unsupervised_advanced.py` ; pour les outliers, `python scripts/run_outliers.py` ; pour l'explicabilité, `python scripts/run_explainability.py`. L'inventaire complet des fichiers generes et leurs producteurs est dans [`results/README_resultats.md`](../results/README_resultats.md).
 
-5. **Verifier le resultat** : confirmer que `best_model.joblib`, les six pipelines du guide (et les artefacts des neuf modeles pour l'analyse etendue) et les JSON attendus existent, qu'ils se chargent, que leurs cles sont coherentes, et que `predict_proba` renvoie une probabilite finie pour `Yes`.
+5. **Verifier le resultat** : confirmer que `best_model.joblib`, les six pipelines du guide (et les artefacts des quatorze modeles pour l'analyse etendue) et les JSON attendus existent, qu'ils se chargent, que leurs cles sont coherentes, et que `predict_proba` renvoie une probabilite finie pour `Yes`.
 6. **Tester l'integration** : lancer depuis la racine :
 
    ```bash
@@ -123,7 +127,7 @@ Le pied de page et les resultats doivent rappeler que les donnees sont synthetiq
    python -m pytest tests -q
    ```
 
-   La suite doit afficher `40 passed`. Verifier manuellement une prediction individuelle, le comparatif des six modeles, les graphiques de facteurs et un CSV de lot contenant les 12 colonnes. Tester aussi le comportement lorsque les artefacts sont absents.
+   La suite doit afficher `68 passed`. Verifier manuellement une prediction individuelle, le comparatif des six modeles, les graphiques de facteurs et un CSV de lot contenant les 12 colonnes. Tester aussi le comportement lorsque les artefacts sont absents.
 7. **Mettre a jour la documentation** si les noms de colonnes, l'algorithme de selection, les metriques ou la structure d'artefacts changent.
 
 Les dependances du projet sont declarees dans `requirements.txt`. Installer ou mettre a jour une dependance dans l'environnement virtuel du projet uniquement si necessaire ; garder les versions compatibles avec Python 3.10+ et Streamlit Community Cloud.
