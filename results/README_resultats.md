@@ -17,10 +17,10 @@
 | Catégorie | Contenu | Règle Git |
 |---|---|---|
 | Jeu source | `data/raw/Employee_Attrition_DataSet.csv` | suivi |
-| Résultats CSV | `results/*.csv` (25 fichiers) et `results/optimization/*.csv` | suivis |
-| Synthèses clés | `results/model_comparison.csv`, `results/cv_summary.csv`, `results/tableau_metriques_rapport.csv`, `results/metrics_bootstrap_ic.csv`, `results/classement_multicritere.csv` | suivies |
+| Résultats CSV | `results/*.csv` (26 fichiers) et `results/optimization/*.csv` | suivis |
+| Synthèses clés | `results/model_comparison.csv`, `results/cv_summary.csv`, `results/tableau_metriques_rapport.csv`, `results/metrics_bootstrap_ic.csv`, `results/classement_multicritere.csv`, `results/explainability_top3.csv` | suivies |
 | Statistiques | `results/stat_tests_vs_attrition.csv`, `results/stat_spearman_paires.csv`, `results/stat_normalite_shapiro.csv`, `results/stat_kruskal_wallis.csv`, `results/descriptive_stats.csv` | suivies |
-| Figures du rapport | `reports/figures/*.png` (35 figures, numéros 01 à 35) | suivies |
+| Figures du rapport | `reports/figures/*.png` (42 figures, numéros 01 à 42) | suivies |
 | Figures du guide | `docs/figures/*.png` (3 figures) | suivies |
 | Notebooks | `notebooks/*.ipynb` (5 notebooks) | suivis |
 | Marqueurs de dossiers | `models/.gitkeep`, `results/.gitkeep`, `data/processed/.gitkeep` | suivis |
@@ -51,6 +51,9 @@ python scripts/run_preprocessing.py
 python scripts/train_pipeline.py
 python scripts/train_models.py
 python scripts/run_unsupervised.py
+python scripts/run_unsupervised_advanced.py
+python scripts/run_outliers.py
+python scripts/run_explainability.py
 python -m pytest tests -q
 ```
 
@@ -58,7 +61,10 @@ python -m pytest tests -q
 - `train_pipeline.py` : pipeline du guide, 6 modèles imposés, sélection sur F1 CV, JSON de métriques.
 - `train_models.py` : analyse étendue, 9 modèles, sélection sur AP CV, seuil optimal, bootstrap, `results/model_comparison.csv` et `results/cv_summary.csv`.
 - `run_unsupervised.py` : PCA, KMeans, agglomératif, DBSCAN.
-- `pytest tests -q` : vérification des contrats ; **40 tests verts** attendus.
+- `run_unsupervised_advanced.py` : choix de k, K-Medoids, DIANA, indices et figure 41.
+- `run_outliers.py` : IQR, Z-score, Isolation Forest, LOF et figure 36.
+- `run_explainability.py` : top-3 SHAP par employé, `results/explainability_top3.csv` et figure 42.
+- `pytest tests -q` : vérification des contrats ; **68 tests verts** attendus.
 
 Sous Windows avec l'environnement du projet :
 
@@ -67,6 +73,9 @@ Sous Windows avec l'environnement du projet :
 .\.venv\Scripts\python.exe scripts\train_pipeline.py
 .\.venv\Scripts\python.exe scripts\train_models.py
 .\.venv\Scripts\python.exe scripts\run_unsupervised.py
+.\.venv\Scripts\python.exe scripts\run_unsupervised_advanced.py
+.\.venv\Scripts\python.exe scripts\run_outliers.py
+.\.venv\Scripts\python.exe scripts\run_explainability.py
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
@@ -86,6 +95,9 @@ Script complémentaire, non requis pour les vérifications du lot : `python scri
 | `results/tableau_metriques_rapport.csv` | `notebooks/05_metrics_analysis.ipynb` | `docs/Rapport_Projet.pdf`, README §6.2 |
 | `results/stat_*.csv`, `results/descriptive_stats.csv` | `notebooks/01_eda_and_cleaning.ipynb`, `src/stats_tests.py` | README §5, rapport PDF |
 | `results/optimization/*.csv` | `scripts/run_optimization.py` | rapport PDF, lot 5 du [`plan de projet`](../docs/PLAN_PROJET.md) |
+| `results/explainability_top3.csv` | `scripts/run_explainability.py` | [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](../docs/GUIDE_IMPLEMENTATION_MODELE.md), rapport PDF |
+| `results/outliers_report.csv` | `scripts/run_outliers.py` | [`docs/OUTLIERS.md`](../docs/OUTLIERS.md), rapport PDF |
+| `results/clustering_advanced.csv` | `scripts/run_unsupervised_advanced.py` | [`docs/CLUSTERING_AVANCE.md`](../docs/CLUSTERING_AVANCE.md), rapport PDF |
 | `reports/figures/*.png` | `scripts/generate_figures.py`, notebooks | README, rapport PDF |
 | `docs/figures/*.png` | `scripts/generate_figures.py` | rapport PDF |
 

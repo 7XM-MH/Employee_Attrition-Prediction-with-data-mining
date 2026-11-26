@@ -74,8 +74,8 @@ Le cycle est itératif : les résultats du lot 5 peuvent conduire à réajuster 
 | Validation croisée | `StratifiedKFold(n_splits >= 5, shuffle=True, random_state=...)` |
 | Sélection modèle | F1 moyen CV pour le pipeline du guide, AP moyen CV pour l'analyse étendue ; test jamais utilisé pour choisir |
 | Métriques reporting | F1, AP, ROC-AUC, matrices de confusion, IC bootstrap |
-| Suite de tests | `python -m pytest tests -q` → **40 passed** (tout écart doit être expliqué dans la PR) |
-| Livrables graphiques | 5 notebooks, 35 figures versionnées |
+| Suite de tests | `python -m pytest tests -q` → **68 passed** (tout écart doit être expliqué dans la PR) |
+| Livrables graphiques | 5 notebooks, 42 figures versionnées |
 | Modèles | 9 modèles supervisés (dont Zero-R), 4 méthodes non supervisées (KMeans, PCA, agglomératif, DBSCAN) |
 | Traçabilité | 1 branche `feature/lotN-*`, 1 commit, 1 PR par lot, revue de `Anwar77-b` |
 | Anonymat | 0 nom, prénom, matricule ou adresse personnelle dans les fichiers suivis |
@@ -110,6 +110,20 @@ Un lot est considéré comme terminé uniquement si :
 | 6 | `feature/lot6-rapport` | à créer | `docs/Rapport_Projet.pdf`, `docs/figures/*.png`, `results/tableau_metriques_rapport.csv` | Anwar77-b |
 
 Action hors lot réalisée pendant le LOT 0 : la PR #2, doublon de la PR #3 déjà mergée, est fermée avec un commentaire poli, **sans merge**.
+
+### Mise à jour — livraisons réellement effectuées (novembre 2026)
+
+Le numérotage des sections 4 et 7 était indicatif. Les prompts exécutés par les membres ont produit la séquence suivante, qui fait foi pour la traçabilité :
+
+| Lot | Branche | PR | Fichiers principaux | Reviewer |
+|---|---|---|---|---|
+| 0 | `feature/lot0-organisation` | #9 (mergée) | `docs/PLAN_PROJET.md`, `CONTRIBUTING.md`, `LICENSE`, `README.md` | Anwar77-b |
+| 1 | `feature/lot1-metriques-guide` | #10 (mergée) | `docs/METRIQUES.md`, `results/README_resultats.md`, `docs/GUIDE_IMPLEMENTATION_MODELE.md` | Anwar77-b |
+| 2 | `feature/lot2-outliers-avances` | #11 (mergée) | `src/outliers.py`, `scripts/run_outliers.py`, `docs/OUTLIERS.md`, `tests/test_outliers.py` | Anwar77-b |
+| 3 | `feature/lot3-clustering-avance` | #12 (mergée) | `src/unsupervised.py`, `scripts/run_unsupervised_advanced.py`, `docs/CLUSTERING_AVANCE.md` | Anwar77-b |
+| 4 | `feature/lot4-modeles-explicabilite` | PR à ouvrir | `src/models.py`, `src/explainability.py`, `scripts/train_pipeline.py`, `scripts/run_explainability.py`, `tests/test_models_extended.py`, `tests/test_explainability.py` | Anwar77-b |
+
+Le rapport `docs/Rapport_Projet.pdf` est présent sur `upstream/main` depuis le commit `9233737` ; la remarque de l'évaluateur (-0,70 pt) portait sur le commit `831b988`, antérieur à ce rapport.
 
 ---
 

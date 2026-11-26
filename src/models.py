@@ -22,7 +22,14 @@ from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (
+    AdaBoostClassifier,
+    BaggingClassifier,
+    ExtraTreesClassifier,
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+)
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold
@@ -58,7 +65,15 @@ SCORING = {"ap": "average_precision", "roc_auc": "roc_auc", "f1": "f1"}
 REFIT = "ap"
 
 BASELINE = "Zero-R"
-EXTENSIONS = ["Régression logistique", "Gradient Boosting"]
+EXTENSIONS = [
+    "Régression logistique",
+    "Gradient Boosting",
+    "Extra Trees",
+    "AdaBoost",
+    "Bagging",
+    "K-NN (cosinus)",
+    "Sélection de variables",
+]
 if XGBClassifier is not None:
     EXTENSIONS.append("XGBoost")
 
@@ -213,6 +228,79 @@ def get_searches(n_jobs: int = 1) -> dict:
         },
         **kw,
     )
+    # --- 6. K-NN en géométrie cosinus : complète euclidienne/Manhattan ---
+    searches["K-NN (cosinus)"] = GridSearchCV(
+        Pipeline([
+            ("prep", build_preprocessor(scale=True)),
+            ("clf", KNeighborsClassifier(metric="cosine", weights="distance")),
+        ]),
+        {
+            "clf__n_neighbors": [5, 11, 31, 51, 101],
+        },
+        **kw,
+    )
+
+    # --- 7. Extra Trees : bagging d'arbres très aléatoires ---
+    searches["Extra Trees"] = RandomizedSearchCV(
+        Pipeline([
+            ("prep", _tree_preprocessor()),
+            ("clf", ExtraTreesClassifier(class_weight="balanced", random_state=RANDOM_STATE)),
+        ]),
+        {
+            "clf__n_estimators": [200, 300],
+            "clf__max_depth": [3, 5, 8, None],
+            "clf__min_samples_leaf": [5, 10, 20],
+            "clf__max_features": ["sqrt", 0.5],
+        },
+        n_iter=8, random_state=RANDOM_STATE, **kw,
+    )
+
+    # --- 8. AdaBoost : renforcement faible à faible (arbres peu profonds) ---
+    searches["AdaBoost"] = GridSearchCV(
+        Pipeline([
+            ("prep", _tree_preprocessor()),
+            ("clf", AdaBoostClassifier(
+                estimator=DecisionTreeClassifier(max_depth=2, random_state=RANDOM_STATE),
+                random_state=RANDOM_STATE,
+            )),
+        ]),
+        {
+            "clf__n_estimators": [50, 100, 200],
+            "clf__learning_rate": [0.01, 0.1, 1.0],
+        },
+        **kw,
+    )
+
+    # --- 9. Bagging : réduction de variance autour d'un arbre équilibré ---
+    searches["Bagging"] = RandomizedSearchCV(
+        Pipeline([
+            ("prep", _tree_preprocessor()),
+            ("clf", BaggingClassifier(
+                estimator=DecisionTreeClassifier(max_depth=4, class_weight="balanced",
+                                                 random_state=RANDOM_STATE),
+                random_state=RANDOM_STATE,
+            )),
+        ]),
+        {
+            "clf__n_estimators": [50, 100],
+            "clf__max_samples": [0.5, 0.8, 1.0],
+            "clf__max_features": [0.5, 1.0],
+        },
+        n_iter=6, random_state=RANDOM_STATE, **kw,
+    )
+
+    # --- 10. Sélection de variables DANS le Pipeline (donc dans chaque CV) ---
+    searches["Sélection de variables"] = GridSearchCV(
+        Pipeline([
+            ("prep", build_preprocessor(scale=True)),
+            ("select", SelectKBest(score_func=f_classif)),
+            ("clf", LogisticRegression(class_weight="balanced", max_iter=2000,
+                                       random_state=RANDOM_STATE)),
+        ]),
+        {"select__k": [5, 8, 12]},
+        **kw,
+    )
+
     if XGBClassifier is not None:
         searches["XGBoost"] = GridSearchCV(
             Pipeline([

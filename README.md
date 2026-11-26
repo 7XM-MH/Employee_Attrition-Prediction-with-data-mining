@@ -66,10 +66,11 @@ Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à a
 | `notebooks/03_model_training_evaluation.ipynb` | Réglage des modèles, seuil optimal, calibration, gain/lift, importance par permutation |
 | `scripts/run_preprocessing.py` | Prétraitement reproductible brut → `data/processed/` + `models/preprocessor.joblib` |
 | `scripts/train_pipeline.py` | Pipeline du guide : 6 modèles imposés, StratifiedKFold(5), artefacts JSON |
-| `scripts/train_models.py` | Analyse étendue : 9 modèles, recherche AP, bootstrap, optimisation du seuil |
+| `scripts/train_models.py` | Analyse étendue : 14 modèles, recherche AP, bootstrap, optimisation du seuil |
 | `scripts/run_unsupervised.py` | KMeans, PCA, agglomératif, DBSCAN |
 | [`scripts/run_unsupervised_advanced.py`](scripts/run_unsupervised_advanced.py) | Choix de k, K-Medoids, DIANA, cosinus, indices de validation → `results/clustering_advanced.csv` et figures 37 à 41 |
 | [`scripts/run_outliers.py`](scripts/run_outliers.py) | Détection des outliers : IQR, Z-score, Isolation Forest, LOF → `results/outliers_report.csv` et figure 36 |
+| [`scripts/run_explainability.py`](scripts/run_explainability.py) | Explicabilité locale SHAP (top 3 par employé) → `results/explainability_top3.csv` et figure 42 |
 | `scripts/generate_figures.py`, `scripts/generate_notebooks.py` | Génération des livrables graphiques / notebooks |
 
 Analyse des outliers détaillée dans [`docs/OUTLIERS.md`](docs/OUTLIERS.md), avec la comparaison graphique [`reports/figures/36_outliers_methodes.png`](reports/figures/36_outliers_methodes.png).
@@ -184,6 +185,9 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | Similarité cosinus, Minkowski | ✅ cosinus testée (Minkowski hors périmètre) — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) |
 | Classification supervisée, CV 5 plis, métriques | ✅ |
 | K-NN, arbres, forêts, Naive Bayes, SVM | ✅ |
+| Ensembles (Extra Trees, AdaBoost, Bagging), K-NN cosinus | ✅ [`src/models.py`](src/models.py), 14 modèles au total |
+| Sélection de variables dans le Pipeline (CV sans fuite) | ✅ `SelectKBest` dans [`src/models.py`](src/models.py) |
+| Explicabilité locale SHAP (top 3 facteurs) | ✅ [`src/explainability.py`](src/explainability.py), [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](docs/GUIDE_IMPLEMENTATION_MODELE.md), figure [`42`](reports/figures/42_shap_local.png) |
 | K-Medoids (PAM), DIANA, dendrogramme | ✅ [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figures [`39`](reports/figures/39_kmedoids_diana.png) et [`38`](reports/figures/38_dendrogramme.png) |
 | Choix de k pour KMeans (coude / silhouette) | ✅ k = 3 retenu — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md), figure [`37`](reports/figures/37_choix_k.png) |
 | Silhouette | ✅ |
@@ -192,7 +196,7 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | CRISP-DM en 6 étapes | ✅ §3 |
 | Déploiement `joblib`, application web | ✅ |
 | Surveillance / concept drift | ⚠️ documenté comme limite, non implémenté |
-| Rapport scientifique PDF | ⚠️ en cours (lot suivant) |
+| Rapport scientifique PDF | ✅ [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) (à mettre à jour avec les résultats des lots 2 à 4) |
 
 Livrables du lot 3 — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) et [`results/clustering_advanced.csv`](results/clustering_advanced.csv) :
 
@@ -201,6 +205,12 @@ Livrables du lot 3 — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) 
 - [`39_kmedoids_diana.png`](reports/figures/39_kmedoids_diana.png) — partitions K-Medoids et DIANA en projection PCA ;
 - [`40_indices_clustering.png`](reports/figures/40_indices_clustering.png) — comparaison des indices pour les sept méthodes ;
 - [`41_clusters_cosinus.png`](reports/figures/41_clusters_cosinus.png) — K-Means en géométrie cosinus.
+
+Livrables du lot 4 — [`src/models.py`](src/models.py), [`src/explainability.py`](src/explainability.py), [`results/explainability_top3.csv`](results/explainability_top3.csv) :
+
+- [`42_shap_local.png`](reports/figures/42_shap_local.png) — contribution SHAP moyenne des facteurs locaux sur 200 employés ;
+- les six clés du guide (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) restent inchangées dans [`scripts/train_pipeline.py`](scripts/train_pipeline.py), dont les imports ont été réparés ;
+- `pytest tests -q` : **68 tests verts** (14 nouveaux tests pour les modèles étendus et l’explicabilité).
 
 ---
 
