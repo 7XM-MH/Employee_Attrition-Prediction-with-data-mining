@@ -22,6 +22,7 @@
 | Statistiques | `results/stat_tests_vs_attrition.csv`, `results/stat_spearman_paires.csv`, `results/stat_normalite_shapiro.csv`, `results/stat_kruskal_wallis.csv`, `results/descriptive_stats.csv` | suivies |
 | Figures du rapport | `reports/figures/*.png` (42 figures, numéros 01 à 42) | suivies |
 | Figures du guide | `docs/figures/*.png` (3 figures) | suivies |
+| Rapport scientifique | `docs/rapport/rapport.md`, `scripts/generate_rapport.py`, `docs/Rapport_MiniProject.pdf`, `docs/Rapport_Projet.pdf` | suivis |
 | Notebooks | `notebooks/*.ipynb` (5 notebooks) | suivis |
 | Marqueurs de dossiers | `models/.gitkeep`, `results/.gitkeep`, `data/processed/.gitkeep` | suivis |
 
@@ -54,16 +55,18 @@ python scripts/run_unsupervised.py
 python scripts/run_unsupervised_advanced.py
 python scripts/run_outliers.py
 python scripts/run_explainability.py
+python scripts/generate_rapport.py
 python -m pytest tests -q
 ```
 
 - `run_preprocessing.py` : CSV traités et `models/preprocessor.joblib` ; doit précéder les entraînements.
 - `train_pipeline.py` : pipeline du guide, 6 modèles imposés, sélection sur F1 CV, JSON de métriques.
-- `train_models.py` : analyse étendue, 9 modèles, sélection sur AP CV, seuil optimal, bootstrap, `results/model_comparison.csv` et `results/cv_summary.csv`.
+- `train_models.py` : analyse étendue, 14 modèles disponibles dans `src/models.py`, sélection sur AP CV, seuil optimal, bootstrap, `results/model_comparison.csv` et `results/cv_summary.csv`.
 - `run_unsupervised.py` : PCA, KMeans, agglomératif, DBSCAN.
 - `run_unsupervised_advanced.py` : choix de k, K-Medoids, DIANA, indices et figure 41.
 - `run_outliers.py` : IQR, Z-score, Isolation Forest, LOF et figure 36.
 - `run_explainability.py` : top-3 SHAP par employé, `results/explainability_top3.csv` et figure 42.
+- `generate_rapport.py` : `docs/Rapport_MiniProject.pdf` et son alias `docs/Rapport_Projet.pdf` depuis `docs/rapport/rapport.md`.
 - `pytest tests -q` : vérification des contrats ; **68 tests verts** attendus.
 
 Sous Windows avec l'environnement du projet :
@@ -76,6 +79,7 @@ Sous Windows avec l'environnement du projet :
 .\.venv\Scripts\python.exe scripts\run_unsupervised_advanced.py
 .\.venv\Scripts\python.exe scripts\run_outliers.py
 .\.venv\Scripts\python.exe scripts\run_explainability.py
+.\.venv\Scripts\python.exe scripts\generate_rapport.py
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
@@ -92,7 +96,9 @@ Script complémentaire, non requis pour les vérifications du lot : `python scri
 | `results/metrics.json`, `results/roc_data.json`, `results/confusion_matrices.json`, `results/best_hyperparameters.json`, `results/cv_results_summary.json`, `results/feature_importances.json` | `scripts/train_pipeline.py` | `app/pages/3_Performance_Modeles.py` |
 | `results/model_comparison.csv` | `scripts/train_models.py` | [`README.md`](../README.md) §6.2, [`docs/METRIQUES.md`](../docs/METRIQUES.md) |
 | `results/cv_summary.csv` | `scripts/train_models.py` | [`docs/METRIQUES.md`](../docs/METRIQUES.md), rapport PDF |
-| `results/tableau_metriques_rapport.csv` | `notebooks/05_metrics_analysis.ipynb` | `docs/Rapport_Projet.pdf`, README §6.2 |
+| `results/tableau_metriques_rapport.csv` | `notebooks/05_metrics_analysis.ipynb` | `docs/Rapport_MiniProject.pdf`, README §6.2 |
+| `docs/rapport/rapport.md` | lot 5 | `scripts/generate_rapport.py` |
+| `docs/Rapport_MiniProject.pdf`, `docs/Rapport_Projet.pdf` | `scripts/generate_rapport.py` | évaluateur, README §9 |
 | `results/stat_*.csv`, `results/descriptive_stats.csv` | `notebooks/01_eda_and_cleaning.ipynb`, `src/stats_tests.py` | README §5, rapport PDF |
 | `results/optimization/*.csv` | `scripts/run_optimization.py` | rapport PDF, lot 5 du [`plan de projet`](../docs/PLAN_PROJET.md) |
 | `results/explainability_top3.csv` | `scripts/run_explainability.py` | [`docs/GUIDE_IMPLEMENTATION_MODELE.md`](../docs/GUIDE_IMPLEMENTATION_MODELE.md), rapport PDF |

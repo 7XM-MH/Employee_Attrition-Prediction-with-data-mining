@@ -71,6 +71,7 @@ Le cycle est itératif : les résultats d'évaluation (étape 5) conduisent à a
 | [`scripts/run_unsupervised_advanced.py`](scripts/run_unsupervised_advanced.py) | Choix de k, K-Medoids, DIANA, cosinus, indices de validation → `results/clustering_advanced.csv` et figures 37 à 41 |
 | [`scripts/run_outliers.py`](scripts/run_outliers.py) | Détection des outliers : IQR, Z-score, Isolation Forest, LOF → `results/outliers_report.csv` et figure 36 |
 | [`scripts/run_explainability.py`](scripts/run_explainability.py) | Explicabilité locale SHAP (top 3 par employé) → `results/explainability_top3.csv` et figure 42 |
+| [`scripts/generate_rapport.py`](scripts/generate_rapport.py) | Rapport PDF depuis [`docs/rapport/rapport.md`](docs/rapport/rapport.md) → `docs/Rapport_MiniProject.pdf` et `docs/Rapport_Projet.pdf` |
 | `scripts/generate_figures.py`, `scripts/generate_notebooks.py` | Génération des livrables graphiques / notebooks |
 
 Analyse des outliers détaillée dans [`docs/OUTLIERS.md`](docs/OUTLIERS.md), avec la comparaison graphique [`reports/figures/36_outliers_methodes.png`](reports/figures/36_outliers_methodes.png).
@@ -110,7 +111,7 @@ Fichiers complémentaires : [`stat_spearman_paires.csv`](results/stat_spearman_p
 
 **Modèle retenu : `DecisionTree`** — F1 CV = 0,1365 ± 0,0230, F1 test = 0,1230, ROC-AUC = 0,5406. Son excédent par rapport à ZeroR reste faible : le signal prédictif de ce jeu synthétique est limité.
 
-### 6.2 Analyse étendue — 9 modèles et optimisation du seuil
+### 6.2 Analyse étendue — 14 modèles et optimisation du seuil
 
 `python scripts/train_models.py` — sélection sur l'**Average Precision** en CV 5 plis, intervalles de confiance bootstrap, seuil de décision optimisé, calibration, gain/lift, importance par permutation.
 
@@ -158,7 +159,7 @@ pip install -r requirements.txt
 
 python scripts/run_preprocessing.py   # données traitées + preprocessor.joblib
 python scripts/train_pipeline.py      # pipeline du guide (6 modèles)
-python scripts/train_models.py        # analyse étendue (9 modèles, plus long)
+python scripts/train_models.py        # analyse étendue (14 modèles, plus long)
 python scripts/run_unsupervised.py    # clustering (4 modèles historiques)
 python scripts/run_unsupervised_advanced.py  # clustering avancé (lot 3)
 python scripts/run_outliers.py        # détection avancée des outliers
@@ -196,7 +197,7 @@ Les `.joblib` et `results/*.json` sont des artefacts générés, **ignorés par 
 | CRISP-DM en 6 étapes | ✅ §3 |
 | Déploiement `joblib`, application web | ✅ |
 | Surveillance / concept drift | ⚠️ documenté comme limite, non implémenté |
-| Rapport scientifique PDF | ✅ [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) (à mettre à jour avec les résultats des lots 2 à 4) |
+| Rapport scientifique PDF | ✅ [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf) (15 pages, lots 0 à 4) et [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) |
 
 Livrables du lot 3 — [`docs/CLUSTERING_AVANCE.md`](docs/CLUSTERING_AVANCE.md) et [`results/clustering_advanced.csv`](results/clustering_advanced.csv) :
 
@@ -211,6 +212,12 @@ Livrables du lot 4 — [`src/models.py`](src/models.py), [`src/explainability.py
 - [`42_shap_local.png`](reports/figures/42_shap_local.png) — contribution SHAP moyenne des facteurs locaux sur 200 employés ;
 - les six clés du guide (`ZeroR`, `KNN`, `DecisionTree`, `RandomForest`, `NaiveBayes`, `SVM`) restent inchangées dans [`scripts/train_pipeline.py`](scripts/train_pipeline.py), dont les imports ont été réparés ;
 - `pytest tests -q` : **68 tests verts** (14 nouveaux tests pour les modèles étendus et l’explicabilité).
+
+Livrables du lot 5 — [`docs/rapport/rapport.md`](docs/rapport/rapport.md), [`scripts/generate_rapport.py`](scripts/generate_rapport.py) :
+
+- [`docs/Rapport_MiniProject.pdf`](docs/Rapport_MiniProject.pdf) — rapport scientifique de 15 pages intégrant les résultats des lots 0 à 4, 16 figures et les intervalles de confiance ;
+- [`docs/Rapport_Projet.pdf`](docs/Rapport_Projet.pdf) — copie d'alias maintenue à jour pour les liens existants ;
+- le modèle de 47 pages [`Rapport_MiniProject_apercu.pdf`](docs/Rapport_MiniProject_apercu.pdf) est conservé tel quel.
 
 ---
 
